@@ -1,46 +1,242 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plates | Local Soul Food Marketplace</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #FFFBEB;
-        }
-        h1, h2, .font-serif {
-            font-family: 'Playfair Display', serif;
-        }
-        @keyframes pulse-emerald {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.7; }
-        }
-        .pulse-live {
-          animation: pulse-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #FFFBEB; }
+        h1, h2, .font-serif { font-family: 'Playfair Display', serif; }
+        /* Hide scrollbar for cleaner UI */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "path": "https://esm.sh/path@^0.12.7",
-    "url": "https://esm.sh/url@^0.11.4",
-    "express": "https://esm.sh/express@^5.2.1"
-  }
-}
-</script>
 </head>
-<body class="overflow-x-hidden">
+<body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+
+    <script type="text/babel" data-presets="react,typescript">
+        const { useState, useMemo, useEffect } = React;
+        const { Search, MapPin, ChevronDown, CheckCircle, ChefHat, LogIn, Utensils, Star, Clock, Home, User, Plus } = lucide;
+
+        // --- 1. DATA & CONSTANTS ---
+        const USER_LOCATIONS = [
+            { name: 'West End', lat: 33.738, lng: -84.425 },
+            { name: 'Midtown', lat: 33.783, lng: -84.383 },
+            { name: 'Buckhead', lat: 33.840, lng: -84.370 },
+            { name: 'Decatur', lat: 33.774, lng: -84.296 },
+            { name: 'East Point', lat: 33.679, lng: -84.439 }
+        ];
+
+        const MOCK_PLATES = [
+            { id: 'we-1', name: 'The Sunday Plate (Oxtails)', cook: "Mama Louise's Kitchen", price: 32.00, rating: 5.0, distanceNum: 0.8, prepTime: '25m', imageUrl: 'https://images.unsplash.com/photo-1606471191009-63994c53433b?auto=format&fit=crop&w=800&q=80', neighborhood: 'West End', category: 'Oxtails', description: 'Slow-braised oxtails in a deep brown gravy served over white rice with mac and yams.' },
+            { id: 'we-2', name: 'Buttermilk Fried Chicken', cook: "Auntie Pearl", price: 18.50, rating: 4.8, distanceNum: 0.5, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1569058242253-92a9c73f49ec?auto=format&fit=crop&w=800&q=80', neighborhood: 'West End', category: 'Main', description: 'Crispy, hand-battered fried chicken with a side of honey-buttered cornbread.' },
+            { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80', neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' },
+            { id: 'bh-1', name: 'Lobster Mac & Cheese', cook: "The Buckhead Estate", price: 38.00, rating: 4.9, distanceNum: 0.9, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80', neighborhood: 'Buckhead', category: 'Main', description: 'Indulgent macaroni with butter-poached lobster and white truffle oil.' },
+            { id: 'dc-1', name: 'Smothered Turkey Wings', cook: "Decatur Comfort", price: 22.00, rating: 4.8, distanceNum: 0.4, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=800&q=80', neighborhood: 'Decatur', category: 'Main', description: 'Fall-off-the-bone turkey wings in a savory homemade gravy.' },
+            { id: 'ep-1', name: 'BBQ Ribs Slab', cook: "East Point Pit", price: 26.00, rating: 4.8, distanceNum: 0.9, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', neighborhood: 'East Point', category: 'Ribs', description: 'St. Louis style ribs smoked over hickory for 12 hours.' }
+        ];
+
+        // --- 2. COMPONENTS ---
+
+        // Icon Component Wrapper (since we are using Lucide global)
+        const Icon = ({ name, size = 16, className }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        };
+
+        const Navigation = ({ currentView, onViewChange, isSellerMode, onToggleMode }) => (
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-100 px-6 py-3 pb-6 flex justify-between items-center z-50">
+                <button onClick={() => onViewChange('landing')} className={`flex flex-col items-center gap-1 ${currentView === 'landing' ? 'text-[#047857]' : 'text-stone-400'}`}>
+                    <Icon name="home" size={24} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Eat</span>
+                </button>
+                
+                <button onClick={onToggleMode} className="flex flex-col items-center gap-1 text-stone-400">
+                   <div className={`p-3 rounded-full -mt-8 shadow-lg ${isSellerMode ? 'bg-[#047857] text-white' : 'bg-[#047857] text-white'}`}>
+                        <Icon name="chef-hat" size={24} />
+                   </div>
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Sell</span>
+                </button>
+
+                <button onClick={() => {}} className="flex flex-col items-center gap-1 text-stone-400">
+                    <Icon name="user" size={24} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Profile</span>
+                </button>
+            </div>
+        );
+
+        const LandingView = ({ onSearch, currentLocationName, onNeighborhoodChange, onStartCooking }) => (
+            <div className="pb-24 pt-20 px-6">
+                <div className="mb-8 mt-4">
+                    <h1 className="text-4xl text-[#047857] mb-2">Hungry?</h1>
+                    <p className="text-stone-500 font-light text-lg">Find homemade soul food in {currentLocationName}.</p>
+                </div>
+
+                <div className="bg-white p-2 rounded-2xl shadow-lg shadow-stone-200/50 flex items-center gap-2 mb-8">
+                    <div className="p-2 text-stone-400"><Icon name="search" size={20}/></div>
+                    <input 
+                        type="text" 
+                        placeholder="Oxtails, yams, mac & cheese..." 
+                        className="w-full outline-none text-stone-700 placeholder:text-stone-300 font-medium"
+                        onKeyDown={(e) => e.key === 'Enter' && onSearch(e.target.value)}
+                    />
+                </div>
+
+                <h2 className="text-xl font-bold text-[#064e3b] mb-4 font-serif">Neighborhoods</h2>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4">
+                    {USER_LOCATIONS.map(loc => (
+                        <button key={loc.name} onClick={() => onNeighborhoodChange(loc.name)} className={`whitespace-nowrap px-6 py-3 rounded-xl border font-bold text-sm tracking-wide transition-all ${currentLocationName === loc.name ? 'bg-[#047857] text-white border-[#047857]' : 'bg-white text-stone-500 border-stone-100'}`}>
+                            {loc.name}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const ResultsView = ({ plates, searchQuery, onOrderPlate }) => (
+            <div className="pb-24 pt-24 px-4">
+                 <h2 className="text-2xl font-serif font-bold text-[#064e3b] mb-6 px-2">
+                    {searchQuery ? `Results for "${searchQuery}"` : "Today's Menu"}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {plates.map(plate => (
+                        <div key={plate.id} onClick={() => onOrderPlate(plate)} className="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-all cursor-pointer">
+                            <div className="h-48 w-full rounded-xl bg-stone-100 overflow-hidden mb-3 relative">
+                                <img src={plate.imageUrl} className="w-full h-full object-cover" alt={plate.name} />
+                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-[#047857]">
+                                    ${plate.price}
+                                </div>
+                            </div>
+                            <div className="px-1">
+                                <div className="flex justify-between items-start mb-1">
+                                    <h3 className="font-bold text-lg text-stone-800 font-serif">{plate.name}</h3>
+                                    <div className="flex items-center gap-1 text-amber-500 text-xs font-bold"><Icon name="star" size={12}/> {plate.rating}</div>
+                                </div>
+                                <p className="text-stone-500 text-sm mb-3 line-clamp-2">{plate.description}</p>
+                                <div className="flex items-center gap-2 text-xs font-bold text-stone-400 uppercase tracking-wider">
+                                    <span className="flex items-center gap-1"><Icon name="chef-hat" size={12}/> {plate.cook}</span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1"><Icon name="clock" size={12}/> {plate.prepTime}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {plates.length === 0 && <div className="text-center py-10 text-stone-400">No plates found in this area.</div>}
+            </div>
+        );
+
+        const CheckoutView = ({ plate, onBack, onConfirm }) => (
+            <div className="fixed inset-0 bg-[#FFFBEB] z-50 flex flex-col">
+                <div className="relative h-64 bg-stone-900">
+                    <img src={plate.imageUrl} className="w-full h-full object-cover opacity-80" />
+                    <button onClick={onBack} className="absolute top-6 left-6 bg-white/20 backdrop-blur p-2 rounded-full text-white">
+                        <Icon name="chevron-down" size={24} className="rotate-90"/>
+                    </button>
+                </div>
+                <div className="flex-1 p-8 bg-white rounded-t-3xl -mt-6 relative">
+                    <div className="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-8"></div>
+                    <h1 className="text-3xl font-serif font-bold text-[#064e3b] mb-2">{plate.name}</h1>
+                    <p className="text-lg text-stone-500 font-medium mb-6">${plate.price}</p>
+                    <p className="text-stone-600 leading-relaxed mb-8">{plate.description}</p>
+                    
+                    <button onClick={onConfirm} className="w-full bg-[#047857] text-white py-4 rounded-xl font-bold text-lg tracking-widest uppercase shadow-xl shadow-emerald-900/20 active:scale-95 transition-transform">
+                        Confirm Order
+                    </button>
+                </div>
+            </div>
+        );
+
+        const SellerDashboard = ({ onBackToBuying }) => (
+            <div className="pt-24 px-6 pb-24 text-center">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-[#047857]">
+                    <Icon name="chef-hat" size={32} />
+                </div>
+                <h2 className="text-2xl font-serif font-bold text-[#064e3b] mb-2">Chef Dashboard</h2>
+                <p className="text-stone-500 mb-8">You are in Seller Mode (Demo)</p>
+                <button onClick={onBackToBuying} className="px-6 py-3 border border-stone-200 rounded-xl text-stone-500 font-bold text-sm">
+                    Switch back to Buying
+                </button>
+            </div>
+        );
+
+        // --- 3. MAIN APP ---
+        const App = () => {
+            const [view, setView] = useState('landing');
+            const [isSellerMode, setIsSellerMode] = useState(false);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [userLocation, setUserLocation] = useState(USER_LOCATIONS[0]);
+            const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
+            const [selectedPlate, setSelectedPlate] = useState(null);
+
+            const filteredPlates = useMemo(() => {
+                let plates = MOCK_PLATES.filter(p => p.neighborhood === userLocation.name);
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    plates = plates.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+                }
+                return plates;
+            }, [searchQuery, userLocation]);
+
+            const handleSearch = (q) => { setSearchQuery(q); setView('results'); };
+            const handleOrder = (plate) => { setSelectedPlate(plate); setView('checkout'); };
+            const toggleSeller = () => { setIsSellerMode(!isSellerMode); setView(isSellerMode ? 'landing' : 'seller-dashboard'); };
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    {view !== 'checkout' && (
+                        <header className="fixed top-0 left-0 right-0 z-40 px-6 py-4 flex justify-between items-center bg-[#047857] shadow-lg">
+                             <div className="text-white">
+                                <span className="text-2xl font-serif font-black" onClick={() => setView('landing')}>plates.</span>
+                                <div className="text-[8px] font-black uppercase tracking-[0.3em] opacity-80">Atlanta Metro</div>
+                            </div>
+                            {!isSellerMode && (
+                                <div className="relative">
+                                    <button onClick={() => setIsLocationMenuOpen(!isLocationMenuOpen)} className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg text-white text-xs font-bold uppercase tracking-wider backdrop-blur">
+                                        {userLocation.name} <Icon name="chevron-down" size={12}/>
+                                    </button>
+                                    {isLocationMenuOpen && (
+                                        <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl w-48 overflow-hidden py-2">
+                                            {USER_LOCATIONS.map(loc => (
+                                                <button key={loc.name} onClick={() => {setUserLocation(loc); setIsLocationMenuOpen(false);}} className="w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-widest text-stone-500 hover:bg-stone-50">
+                                                    {loc.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </header>
+                    )}
+
+                    {/* Views */}
+                    {view === 'landing' && <LandingView onSearch={handleSearch} currentLocationName={userLocation.name} onNeighborhoodChange={(n) => {const l = USER_LOCATIONS.find(x=>x.name===n); if(l) setUserLocation(l);}} />}
+                    {view === 'results' && <ResultsView plates={filteredPlates} searchQuery={searchQuery} onOrderPlate={handleOrder} />}
+                    {view === 'checkout' && selectedPlate && <CheckoutView plate={selectedPlate} onBack={() => setView('results')} onConfirm={() => {alert('Order Confirmed!'); setView('landing');}} />}
+                    {view === 'seller-dashboard' && <SellerDashboard onBackToBuying={toggleSeller} />}
+
+                    {/* Nav */}
+                    {view !== 'checkout' && <Navigation currentView={view} onViewChange={setView} isSellerMode={isSellerMode} onToggleMode={toggleSeller} />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>

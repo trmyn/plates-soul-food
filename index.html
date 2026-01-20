@@ -28,7 +28,7 @@
     <script type="text/babel" data-presets="react,typescript">
         const { useState, useMemo, useEffect } = React;
 
-        // --- SAFE ICON COMPONENT ---
+        // --- SAFE ICON HELPER ---
         const Icon = ({ name, size=20, className }) => {
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
             return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-block', verticalAlign: 'middle' }}></i>;
@@ -58,9 +58,13 @@
                         {!transparent && <span className="text-[8px] font-black uppercase tracking-[0.3em] mt-1 text-emerald-100/60">Atlanta Metro</span>}
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={onStartCooking} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest ${isSellerMode ? 'bg-white text-[#047857]' : 'bg-transparent border-white text-white hover:bg-white/10'}`}>
-                            <Icon name="chef-hat" size={16} /><span className="hidden md:inline">Start Cooking</span>
-                        </button>
+                        {/* HIDE START COOKING IF SELLER MODE */}
+                        {!isSellerMode && (
+                            <button onClick={onStartCooking} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest bg-transparent border-white text-white hover:bg-white/10">
+                                <Icon name="chef-hat" size={16} /><span className="hidden md:inline">Start Cooking</span>
+                            </button>
+                        )}
+                        
                         {!isSellerMode && (
                             <div className="relative">
                                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white/20">
@@ -74,7 +78,7 @@
             );
         };
 
-        // --- SELLER PITCH (3 Cards) ---
+        // --- SELLER PITCH (Updated Copy) ---
         const SellerPitch = ({ onNext, onBack }) => (
             <div className="min-h-screen bg-[#FFFBEB] pt-20 px-6 flex flex-col overflow-y-auto">
                 <button onClick={onBack} className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-6"><Icon name="arrow-left" /></button>
@@ -85,15 +89,18 @@
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 w-full">
                         <div className="bg-white p-8 rounded-[2rem] border border-amber-50 shadow-xl text-center">
                             <div className="w-12 h-12 bg-emerald-50 text-[#047857] rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="dollar-sign" size={24} /></div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">98% Payout</h3><p className="text-xs text-slate-500">Keep 98% of your earnings.</p>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">98% Payout</h3>
+                            <p className="text-xs text-slate-500">Keep 98% of your earnings. We only take a small 2% fee.</p>
                         </div>
                         <div className="bg-white p-8 rounded-[2rem] border border-amber-50 shadow-xl text-center">
                             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="users" size={24} /></div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">Local Reach</h3><p className="text-xs text-slate-500">Access thousands of neighbors.</p>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">Local Reach</h3>
+                            <p className="text-xs text-slate-500">Access to thousands of hungry neighbors right outside your door.</p>
                         </div>
                         <div className="bg-white p-8 rounded-[2rem] border border-amber-50 shadow-xl text-center">
                             <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="shield-check" size={24} /></div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">Pro Tools</h3><p className="text-xs text-slate-500">Manage orders easily.</p>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">Pro Tools</h3>
+                            <p className="text-xs text-slate-500">Pro Membership: Just $99/year. (First month free!)</p>
                         </div>
                     </div>
                     <button onClick={onNext} className="w-full max-w-md py-6 bg-[#047857] text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-2xl hover:scale-[1.02] transition-transform">Join the Neighborhood <Icon name="arrow-right" /></button>
@@ -101,23 +108,28 @@
             </div>
         );
 
-        // --- SELLER PROFILE (Create Kitchen) ---
+        // --- SELLER PROFILE (Added Chef Name) ---
         const SellerProfile = ({ onNext, onBack }) => {
-            const [val, setVal] = useState('');
+            const [kitchen, setKitchen] = useState('');
+            const [chef, setChef] = useState('');
             return (
                 <div className="min-h-screen bg-[#FFFBEB] pt-24 px-6 flex flex-col items-center">
                     <button onClick={onBack} className="self-start mb-8 w-10 h-10 bg-white rounded-full flex items-center justify-center"><Icon name="arrow-left" /></button>
                     <div className="w-full max-w-md">
                         <h1 className="text-4xl font-serif font-black text-slate-900 mb-8">Setup Your Kitchen.</h1>
                         <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Kitchen Name</label>
-                        <input value={val} onChange={e=>setVal(e.target.value)} placeholder="e.g. Auntie's Kitchen" className="w-full p-6 text-xl rounded-2xl border-none shadow-lg mb-8 outline-none" />
-                        <button onClick={() => onNext({kitchenName: val})} className="w-full py-6 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2">Create Kitchen <Icon name="arrow-right" /></button>
+                        <input value={kitchen} onChange={e=>setKitchen(e.target.value)} placeholder="e.g. Auntie's Soul Food" className="w-full p-6 text-xl rounded-2xl border-none shadow-lg mb-6 outline-none" />
+                        
+                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Chef Name</label>
+                        <input value={chef} onChange={e=>setChef(e.target.value)} placeholder="e.g. Grandma Rose" className="w-full p-6 text-xl rounded-2xl border-none shadow-lg mb-8 outline-none" />
+
+                        <button onClick={() => onNext({kitchenName: kitchen, chefName: chef})} className="w-full py-6 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2">Create Kitchen <Icon name="arrow-right" /></button>
                     </div>
                 </div>
             );
         }
 
-        // --- SELLER DASHBOARD (High Fidelity) ---
+        // --- SELLER DASHBOARD ---
         const SellerDashboard = ({ kitchenName, onPost, onExit, loc }) => {
             const sales = 1250.00;
             const plates = 85;
@@ -132,6 +144,7 @@
                                         <h1 className="text-3xl font-serif font-black">{kitchenName || "My Kitchen"}</h1>
                                         <div className="inline-flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full mt-2"><Icon name="award" size={12} className="text-amber-300" /><span className="text-[9px] font-black uppercase tracking-widest">Pro Member</span></div>
                                     </div>
+                                    <button onClick={onExit} className="p-3 bg-white/10 rounded-xl"><Icon name="log-out" /></button>
                                 </div>
                                 <div className="grid grid-cols-3 gap-4 mt-8">
                                     <div className="bg-white/10 p-4 rounded-2xl backdrop-blur"><p className="text-[8px] font-black uppercase text-emerald-100">Sales</p><p className="text-xl font-black">${sales.toLocaleString()}</p></div>
@@ -167,7 +180,7 @@
             <div className="min-h-screen bg-white pt-24 px-6 flex flex-col items-center">
                  <button onClick={onBack} className="self-start mb-6 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center"><Icon name="arrow-left" /></button>
                  <div className="w-full max-w-md space-y-4">
-                    <h1 className="text-3xl font-serif font-black text-slate-900">The Dish</h1>
+                    <h1 className="text-3xl font-serif font-black text-slate-900">Post a Plate</h1>
                     <div className="h-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 gap-2"><Icon name="camera" size={24} /><span className="text-xs font-bold uppercase">Upload Photo</span></div>
                     <input placeholder="Dish Name" className="w-full p-4 bg-slate-50 rounded-xl" />
                     <input placeholder="Description" className="w-full p-4 bg-slate-50 rounded-xl" />
@@ -213,34 +226,58 @@
             </div>
         );
 
-        // --- CHECKOUT VIEW (High Fidelity with Receipt) ---
-        const CheckoutView = ({ plate, onBack, onConfirm }) => (
-            <div className="min-h-screen bg-white pb-32 pt-24">
-                <div className="px-6 max-w-xl mx-auto">
-                    <button onClick={onBack} className="mb-4 flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest"><Icon name="arrow-left" size={16}/> Back</button>
-                    <h1 className="text-3xl font-serif font-black text-slate-900 mb-8">Checkout</h1>
-                    <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 mb-8">
-                        <img src={plate.imageUrl} className="w-24 h-24 rounded-xl object-cover" />
-                        <div className="flex flex-col justify-center"><h3 className="text-lg font-serif font-bold text-slate-900">{plate.name}</h3><p className="text-sm text-[#047857] font-bold uppercase tracking-wider mt-1">from {plate.cook}</p><p className="text-xl font-black text-slate-900 mt-2">${plate.price.toFixed(2)}</p></div>
-                    </div>
-                    <div className="space-y-6 mb-8">
-                        <div><h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Pickup Location</h4><div className="flex items-center gap-4 p-4 border-2 border-slate-100 rounded-2xl"><div className="p-3 bg-emerald-50 text-[#047857] rounded-xl"><Icon name="map-pin" /></div><div><p className="font-bold text-slate-900">{plate.neighborhood} Hub</p><p className="text-xs text-slate-500">Address shared after confirmation</p></div></div></div>
-                        <div><h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Payment Method</h4><div className="flex items-center justify-between p-4 border-2 border-slate-100 rounded-2xl"><div className="flex items-center gap-4"><Icon name="credit-card" className="text-slate-400" /><span className="font-bold text-slate-900">•••• 4242</span></div><span className="text-[10px] font-black uppercase text-[#047857]">Change</span></div></div>
-                    </div>
-                    <div className="border-t border-slate-100 pt-6 space-y-3 mb-8">
-                        <div className="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span>${plate.price.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-sm text-slate-500"><span>Service Fee</span><span>$2.50</span></div>
-                        <div className="flex justify-between text-xl font-black text-slate-900 pt-2"><span>Total</span><span>${(plate.price + 2.5).toFixed(2)}</span></div>
-                    </div>
-                    <button onClick={onConfirm} className="w-full py-5 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] transition-transform">Confirm My Plate <Icon name="shopping-bag" size={16} /></button>
-                </div>
-            </div>
-        );
+        // --- BUYER PAGES ---
 
-        // --- RESULTS VIEW (With Map) ---
+        const CheckoutView = ({ plate, onBack, onConfirm }) => {
+            const [pickupTime, setPickupTime] = useState('ASAP');
+            return (
+                <div className="min-h-screen bg-white pb-32 pt-24">
+                    <div className="px-6 max-w-xl mx-auto">
+                        <button onClick={onBack} className="mb-4 flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest"><Icon name="arrow-left" size={16}/> Back</button>
+                        <h1 className="text-3xl font-serif font-black text-slate-900 mb-8">Checkout</h1>
+                        
+                        {/* Summary */}
+                        <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 mb-8">
+                            <img src={plate.imageUrl} className="w-24 h-24 rounded-xl object-cover" />
+                            <div className="flex flex-col justify-center"><h3 className="text-lg font-serif font-bold text-slate-900">{plate.name}</h3><p className="text-sm text-[#047857] font-bold uppercase tracking-wider mt-1">from {plate.cook}</p><p className="text-xl font-black text-slate-900 mt-2">${plate.price.toFixed(2)}</p></div>
+                        </div>
+
+                        {/* Pick-up Time (Added Back) */}
+                        <div className="space-y-4 mb-8">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Pick-up Time</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                {['ASAP', 'In 30 mins', 'In 1 hour', 'Later Today'].map((time) => (
+                                    <button key={time} onClick={() => setPickupTime(time)} className={`py-4 px-4 rounded-xl text-xs font-bold transition-all border-2 ${pickupTime === time ? 'border-[#047857] bg-emerald-50 text-[#047857]' : 'border-slate-100 text-slate-500'}`}>{time}</button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-6 mb-8">
+                            <div><h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Pickup Location</h4><div className="flex items-center gap-4 p-4 border-2 border-slate-100 rounded-2xl"><div className="p-3 bg-emerald-50 text-[#047857] rounded-xl"><Icon name="map-pin" /></div><div><p className="font-bold text-slate-900">{plate.neighborhood} Hub</p><p className="text-xs text-slate-500">Address shared after confirmation</p></div></div></div>
+                            <div><h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Payment Method</h4><div className="flex items-center justify-between p-4 border-2 border-slate-100 rounded-2xl"><div className="flex items-center gap-4"><Icon name="credit-card" className="text-slate-400" /><span className="font-bold text-slate-900">•••• 4242</span></div><span className="text-[10px] font-black uppercase text-[#047857]">Change</span></div></div>
+                        </div>
+
+                        {/* Receipt (Restored) */}
+                        <div className="border-t border-slate-100 pt-6 space-y-3 mb-8">
+                            <div className="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span>${plate.price.toFixed(2)}</span></div>
+                            <div className="flex justify-between text-sm text-slate-500"><span>Service Fee</span><span>$2.50</span></div>
+                            <div className="flex justify-between text-xl font-black text-slate-900 pt-2"><span>Total</span><span>${(plate.price + 2.5).toFixed(2)}</span></div>
+                        </div>
+                        
+                        <button onClick={onConfirm} className="w-full py-5 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] transition-transform">Confirm Order <Icon name="shopping-bag" size={16} /></button>
+                    </div>
+                </div>
+            );
+        };
+
         const ResultsView = ({ plates, searchQuery, categoryFilter, userLocation, onOrderPlate, onCategoryChange, onSearchChange, onBack }) => (
             <div className="flex flex-col md:flex-row h-screen pt-20 bg-[#FFFBEB] overflow-hidden">
-                <div className="hidden md:flex w-[40%] h-full bg-stone-200 items-center justify-center text-stone-400 gap-2 border-r border-white/20"><Icon name="map-pin" size={40} /><span className="text-xs font-bold uppercase">Map View</span></div>
+                {/* Real Map Visual */}
+                <div className="hidden md:flex w-[40%] h-full relative border-r border-white/20">
+                     <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1000&q=80" className="w-full h-full object-cover opacity-60 grayscale" />
+                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl shadow-xl font-bold text-slate-600 flex items-center gap-2"><Icon name="map-pin" size={16} /> Interactive Map</div></div>
+                </div>
+                
                 <div className="w-full md:w-[60%] h-full overflow-y-auto pb-32 px-6 no-scrollbar">
                     <div className="sticky top-0 bg-[#FFFBEB]/95 backdrop-blur py-4 z-10 border-b border-amber-100 mb-6">
                         <div className="flex gap-2 items-center mb-4">
@@ -272,12 +309,10 @@
             </div>
         );
 
-        // --- LANDING VIEW (High Fidelity) ---
         const LandingView = ({ onSearch, currentLocationName, onNeighborhoodChange, onStartCooking }) => {
             const [localQuery, setLocalQuery] = useState('');
             const [isLocOpen, setIsLocOpen] = useState(false);
             const categories = ["Ribs", "Oxtails", "Yams", "Greens"];
-
             return (
                 <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#FFFBEB]">
                     <div className="w-full md:w-1/2 h-[50vh] md:h-screen relative overflow-hidden">

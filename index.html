@@ -29,9 +29,9 @@
         const { useState, useMemo, useEffect } = React;
 
         // --- SAFE ICON HELPER ---
-        const Icon = ({ name, size=20, className }) => {
+        const Icon = ({ name, size=20, className, fill }) => {
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-block', verticalAlign: 'middle' }}></i>;
+            return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-block', verticalAlign: 'middle', fill: fill }}></i>;
         };
 
         const USER_LOCATIONS = [
@@ -58,13 +58,11 @@
                         {!transparent && <span className="text-[8px] font-black uppercase tracking-[0.3em] mt-1 text-emerald-100/60">Atlanta Metro</span>}
                     </div>
                     <div className="flex items-center gap-3">
-                        {/* HIDE START COOKING IF SELLER MODE */}
                         {!isSellerMode && (
                             <button onClick={onStartCooking} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest bg-transparent border-white text-white hover:bg-white/10">
                                 <Icon name="chef-hat" size={16} /><span className="hidden md:inline">Start Cooking</span>
                             </button>
                         )}
-                        
                         {!isSellerMode && (
                             <div className="relative">
                                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white/20">
@@ -78,37 +76,40 @@
             );
         };
 
-        // --- SELLER PITCH (Updated Copy) ---
+        // --- SELLER PITCH (Big Cards) ---
         const SellerPitch = ({ onNext, onBack }) => (
             <div className="min-h-screen bg-[#FFFBEB] pt-20 px-6 flex flex-col overflow-y-auto">
                 <button onClick={onBack} className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-6"><Icon name="arrow-left" /></button>
-                <div className="flex-1 flex flex-col items-center max-w-4xl mx-auto w-full text-center pb-20">
+                <div className="flex-1 flex flex-col items-center max-w-5xl mx-auto w-full text-center pb-20">
                     <div className="w-20 h-20 bg-[#047857] text-white rounded-[2rem] flex items-center justify-center mb-8 mx-auto shadow-2xl"><Icon name="chef-hat" size={40} /></div>
                     <h1 className="text-5xl font-serif leading-tight text-slate-900 mb-6">Turn Your Kitchen into a Business.</h1>
                     <p className="text-slate-500 text-xl font-medium mb-12 max-w-2xl">Cook for your neighborhood, earn on your terms, and share your signature plates with thousands of hungry neighbors.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 w-full">
-                        <div className="bg-white p-8 rounded-[2rem] border border-amber-50 shadow-xl text-center">
-                            <div className="w-12 h-12 bg-emerald-50 text-[#047857] rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="dollar-sign" size={24} /></div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">98% Payout</h3>
-                            <p className="text-xs text-slate-500">Keep 98% of your earnings. We only take a small 2% fee.</p>
+                    
+                    {/* CARDS SECTION - INCREASED SIZE */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 w-full">
+                        <div className="bg-white p-10 rounded-[2.5rem] border border-amber-50 shadow-xl text-center flex flex-col justify-center min-h-[300px] hover:-translate-y-2 transition-transform">
+                            <div className="w-16 h-16 bg-emerald-50 text-[#047857] rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="dollar-sign" size={32} /></div>
+                            <h3 className="text-lg font-black uppercase tracking-widest text-slate-900 mb-3">98% Payout</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed font-medium">Keep 98% of your earnings. We only take a small 2% fee.</p>
                         </div>
-                        <div className="bg-white p-8 rounded-[2rem] border border-amber-50 shadow-xl text-center">
-                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="users" size={24} /></div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">Local Reach</h3>
-                            <p className="text-xs text-slate-500">Access to thousands of hungry neighbors right outside your door.</p>
+                        <div className="bg-white p-10 rounded-[2.5rem] border border-amber-50 shadow-xl text-center flex flex-col justify-center min-h-[300px] hover:-translate-y-2 transition-transform">
+                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="users" size={32} /></div>
+                            <h3 className="text-lg font-black uppercase tracking-widest text-slate-900 mb-3">Local Reach</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed font-medium">Access to thousands of hungry neighbors right outside your door.</p>
                         </div>
-                        <div className="bg-white p-8 rounded-[2rem] border border-amber-50 shadow-xl text-center">
-                            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="shield-check" size={24} /></div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-2">Pro Tools</h3>
-                            <p className="text-xs text-slate-500">Pro Membership: Just $99/year. (First month free!)</p>
+                        <div className="bg-white p-10 rounded-[2.5rem] border border-amber-50 shadow-xl text-center flex flex-col justify-center min-h-[300px] hover:-translate-y-2 transition-transform">
+                            <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="shield-check" size={32} /></div>
+                            <h3 className="text-lg font-black uppercase tracking-widest text-slate-900 mb-3">Pro Tools</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed font-medium">Pro Membership: Just $99/year. (First month free!)</p>
                         </div>
                     </div>
+                    
                     <button onClick={onNext} className="w-full max-w-md py-6 bg-[#047857] text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-2xl hover:scale-[1.02] transition-transform">Join the Neighborhood <Icon name="arrow-right" /></button>
                 </div>
             </div>
         );
 
-        // --- SELLER PROFILE (Added Chef Name) ---
+        // --- SELLER PROFILE (With Chef Name) ---
         const SellerProfile = ({ onNext, onBack }) => {
             const [kitchen, setKitchen] = useState('');
             const [chef, setChef] = useState('');
@@ -118,7 +119,7 @@
                     <div className="w-full max-w-md">
                         <h1 className="text-4xl font-serif font-black text-slate-900 mb-8">Setup Your Kitchen.</h1>
                         <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Kitchen Name</label>
-                        <input value={kitchen} onChange={e=>setKitchen(e.target.value)} placeholder="e.g. Auntie's Soul Food" className="w-full p-6 text-xl rounded-2xl border-none shadow-lg mb-6 outline-none" />
+                        <input value={kitchen} onChange={e=>setKitchen(e.target.value)} placeholder="e.g. Auntie's Kitchen" className="w-full p-6 text-xl rounded-2xl border-none shadow-lg mb-8 outline-none" />
                         
                         <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Chef Name</label>
                         <input value={chef} onChange={e=>setChef(e.target.value)} placeholder="e.g. Grandma Rose" className="w-full p-6 text-xl rounded-2xl border-none shadow-lg mb-8 outline-none" />
@@ -226,8 +227,7 @@
             </div>
         );
 
-        // --- BUYER PAGES ---
-
+        // --- CHECKOUT VIEW ---
         const CheckoutView = ({ plate, onBack, onConfirm }) => {
             const [pickupTime, setPickupTime] = useState('ASAP');
             return (
@@ -236,13 +236,12 @@
                         <button onClick={onBack} className="mb-4 flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest"><Icon name="arrow-left" size={16}/> Back</button>
                         <h1 className="text-3xl font-serif font-black text-slate-900 mb-8">Checkout</h1>
                         
-                        {/* Summary */}
                         <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 mb-8">
                             <img src={plate.imageUrl} className="w-24 h-24 rounded-xl object-cover" />
                             <div className="flex flex-col justify-center"><h3 className="text-lg font-serif font-bold text-slate-900">{plate.name}</h3><p className="text-sm text-[#047857] font-bold uppercase tracking-wider mt-1">from {plate.cook}</p><p className="text-xl font-black text-slate-900 mt-2">${plate.price.toFixed(2)}</p></div>
                         </div>
 
-                        {/* Pick-up Time (Added Back) */}
+                        {/* Pick-up Time */}
                         <div className="space-y-4 mb-8">
                             <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Pick-up Time</h4>
                             <div className="grid grid-cols-2 gap-3">
@@ -257,7 +256,7 @@
                             <div><h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Payment Method</h4><div className="flex items-center justify-between p-4 border-2 border-slate-100 rounded-2xl"><div className="flex items-center gap-4"><Icon name="credit-card" className="text-slate-400" /><span className="font-bold text-slate-900">•••• 4242</span></div><span className="text-[10px] font-black uppercase text-[#047857]">Change</span></div></div>
                         </div>
 
-                        {/* Receipt (Restored) */}
+                        {/* Receipt */}
                         <div className="border-t border-slate-100 pt-6 space-y-3 mb-8">
                             <div className="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span>${plate.price.toFixed(2)}</span></div>
                             <div className="flex justify-between text-sm text-slate-500"><span>Service Fee</span><span>$2.50</span></div>
@@ -270,12 +269,33 @@
             );
         };
 
+        // --- RESULTS VIEW (REAL GOOGLE MAPS STYLE VISUAL) ---
         const ResultsView = ({ plates, searchQuery, categoryFilter, userLocation, onOrderPlate, onCategoryChange, onSearchChange, onBack }) => (
             <div className="flex flex-col md:flex-row h-screen pt-20 bg-[#FFFBEB] overflow-hidden">
-                {/* Real Map Visual */}
-                <div className="hidden md:flex w-[40%] h-full relative border-r border-white/20">
-                     <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1000&q=80" className="w-full h-full object-cover opacity-60 grayscale" />
-                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl shadow-xl font-bold text-slate-600 flex items-center gap-2"><Icon name="map-pin" size={16} /> Interactive Map</div></div>
+                <div className="hidden md:block w-[40%] h-full relative border-r border-white/20 overflow-hidden bg-slate-100">
+                     {/* Base Map Layer */}
+                     <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/-84.3880,33.7490,12,0/800x600?access_token=YOUR_TOKEN')] bg-cover bg-center opacity-50 grayscale mix-blend-multiply"></div>
+                     <div className="absolute inset-0 bg-slate-200/30"></div>
+                     
+                     {/* Simulated Google Maps Pins */}
+                     <div className="absolute top-1/2 left-1/2 -translate-x-4 -translate-y-8 animate-bounce">
+                        <Icon name="map-pin" size={40} className="text-red-600 fill-red-600 drop-shadow-2xl" />
+                     </div>
+                     <div className="absolute top-1/3 left-1/3">
+                        <Icon name="map-pin" size={32} className="text-red-600 fill-red-600 drop-shadow-xl" />
+                     </div>
+                     <div className="absolute bottom-1/3 right-1/4">
+                        <Icon name="map-pin" size={32} className="text-red-600 fill-red-600 drop-shadow-xl" />
+                     </div>
+                     <div className="absolute top-1/4 right-1/3">
+                        <Icon name="map-pin" size={32} className="text-red-600 fill-red-600 drop-shadow-xl" />
+                     </div>
+
+                     {/* Map Controls Overlay */}
+                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-slate-200 flex items-center gap-2 cursor-pointer hover:bg-white transition-colors">
+                        <Icon name="search" size={14} className="text-slate-400"/>
+                        <span className="text-xs font-bold text-slate-700">Search this area</span>
+                     </div>
                 </div>
                 
                 <div className="w-full md:w-[60%] h-full overflow-y-auto pb-32 px-6 no-scrollbar">
@@ -309,6 +329,7 @@
             </div>
         );
 
+        // --- LANDING VIEW (Extra Wide Text Overlay) ---
         const LandingView = ({ onSearch, currentLocationName, onNeighborhoodChange, onStartCooking }) => {
             const [localQuery, setLocalQuery] = useState('');
             const [isLocOpen, setIsLocOpen] = useState(false);
@@ -316,10 +337,12 @@
             return (
                 <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#FFFBEB]">
                     <div className="w-full md:w-1/2 h-[50vh] md:h-screen relative overflow-hidden">
-                        <img src="https://147611588.cdn6.editmysite.com/uploads/1/4/7/6/147611588/EEVYVMTD47S5OH7KZS7RHKW4.png?width=2400&optimize=medium" className="w-full h-full object-cover brightness-95" />
+                        <img src="https://147611588.cdn6.editmysite.com/uploads/1/4/7/6/147611588/EEVYVMTD47S5OH7KZS7RHKW4.png?width=2400&optimize=medium" alt="Cajun Fried Chicken" className="w-full h-full object-cover brightness-95" />
                         <div className="absolute inset-0 bg-black/20" />
-                        <div className="absolute bottom-12 left-12 hidden md:block bg-black/40 backdrop-blur-md p-8 pb-10 rounded-3xl border border-white/20 max-w-sm">
-                            <p className="text-white text-xl font-serif font-bold mb-2">Most Popular: Cajun Fried Chicken</p>
+                        
+                        {/* WIDE OVERLAY */}
+                        <div className="absolute bottom-12 left-12 hidden md:block bg-black/40 backdrop-blur-md p-8 pb-10 rounded-3xl border border-white/20 max-w-2xl">
+                            <p className="text-white text-xl font-serif font-bold mb-2 whitespace-nowrap">Most Popular: Cajun Fried Chicken</p>
                             <p className="text-white/80 text-sm leading-relaxed mb-6">Tossed in our sticky sauce. Served with 2 sides.</p>
                             <div className="flex flex-col items-center">
                                 <button onClick={onStartCooking} className="w-full py-4 bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-orange-700 transition-all">Earn Cash Cooking</button>

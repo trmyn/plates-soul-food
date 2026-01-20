@@ -13,8 +13,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #FFFBEB; }
@@ -26,13 +26,14 @@
         .leaflet-control-attribution { display: none !important; }
         /* Custom Pins */
         .custom-pin { background-color: #DC2626; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .map-loading { background: #f5f5f4; display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; color: #a8a29e; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel" data-presets="react,typescript">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useMemo, useEffect, useRef } = React;
 
         const Icon = ({ name, size=20, className, fill }) => {
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
@@ -47,27 +48,27 @@
             { name: 'East Point', lat: 33.679, lng: -84.439 }
         ];
 
-        // FIXED IMAGES
+        // --- FIXED HIGH-SPEED IMAGES ---
         const MOCK_PLATES = [
-            { id: 'we-1', name: 'The Sunday Plate (Oxtails)', cook: "Mama Louise's Kitchen", price: 32.00, rating: 5.0, distanceNum: 0.8, prepTime: '25m', imageUrl: 'https://images.unsplash.com/photo-1546241072-48010ad2862c?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'West End', category: 'Oxtails', description: 'Slow-braised oxtails in a deep brown gravy served over white rice with mac and yams.' },
+            { id: 'we-1', name: 'The Sunday Plate (Oxtails)', cook: "Mama Louise's Kitchen", price: 32.00, rating: 5.0, distanceNum: 0.8, prepTime: '25m', imageUrl: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'West End', category: 'Oxtails', description: 'Slow-braised oxtails in a deep brown gravy served over white rice with mac and yams.' },
             { id: 'we-2', name: 'Buttermilk Fried Chicken', cook: "Auntie Pearl", price: 18.50, rating: 4.8, distanceNum: 0.5, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'West End', category: 'Main', description: 'Crispy, hand-battered fried chicken with a side of honey-buttered cornbread.' },
-            { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' }
+            { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' }
         ];
 
-        // --- FAST MAP COMPONENT ---
+        // --- MAP COMPONENT (OPTIMIZED) ---
         const AtlantaMap = () => {
+            const mapRef = useRef(null);
+
             useEffect(() => {
-                const container = document.getElementById('atlanta-map');
-                if (!container || container._leaflet_id) return; // Prevent reload
+                if (mapRef.current) return; // Prevent double load
 
                 const map = L.map('atlanta-map', { zoomControl: false }).setView([33.7537, -84.3863], 11);
+                mapRef.current = map;
 
-                // Using CartoDB Voyager tiles (Faster than standard OSM)
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                     maxZoom: 20
                 }).addTo(map);
 
-                // Add Red Pins
                 USER_LOCATIONS.forEach(loc => {
                     const icon = L.divIcon({
                         className: 'bg-transparent',
@@ -77,7 +78,12 @@
                 });
             }, []);
 
-            return <div id="atlanta-map" className="w-full h-full bg-slate-100 z-0"></div>;
+            return (
+                <div className="relative w-full h-full">
+                    <div id="atlanta-map" className="w-full h-full z-0"></div>
+                    {!mapRef.current && <div className="absolute inset-0 map-loading">Loading Atlanta Map...</div>}
+                </div>
+            );
         };
 
         const GlobalHeader = ({ userLocation, onLocationChange, onStartCooking, isSellerMode, transparent = false }) => {
@@ -107,6 +113,7 @@
             );
         };
 
+        // --- SELLER PITCH ---
         const SellerPitch = ({ onNext, onBack }) => (
             <div className="min-h-screen bg-[#FFFBEB] pt-20 px-6 flex flex-col overflow-y-auto">
                 <button onClick={onBack} className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-6"><Icon name="arrow-left" /></button>
@@ -114,6 +121,7 @@
                     <div className="w-20 h-20 bg-[#047857] text-white rounded-[2rem] flex items-center justify-center mb-8 mx-auto shadow-2xl"><Icon name="chef-hat" size={40} /></div>
                     <h1 className="text-5xl font-serif leading-tight text-slate-900 mb-6">Turn Your Kitchen into a Business.</h1>
                     <p className="text-slate-500 text-xl font-medium mb-12 max-w-2xl">Cook for your neighborhood, earn on your terms, and share your signature plates with thousands of hungry neighbors.</p>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 w-full">
                         <div className="bg-white p-10 rounded-[2.5rem] border border-amber-50 shadow-xl text-center flex flex-col justify-center min-h-[300px] hover:-translate-y-2 transition-transform">
                             <div className="w-16 h-16 bg-emerald-50 text-[#047857] rounded-2xl flex items-center justify-center mb-6 mx-auto"><Icon name="dollar-sign" size={32} /></div>
@@ -136,6 +144,7 @@
             </div>
         );
 
+        // --- SELLER PROFILE ---
         const SellerProfile = ({ onNext, onBack }) => {
             const [kitchen, setKitchen] = useState('');
             const [chef, setChef] = useState('');
@@ -154,6 +163,7 @@
             );
         }
 
+        // --- SELLER DASHBOARD ---
         const SellerDashboard = ({ kitchenName, onPost, onExit, loc }) => {
             const sales = 1250.00;
             const plates = 85;
@@ -186,7 +196,7 @@
                         <div>
                             <div className="flex justify-between items-end mb-4"><h2 className="text-2xl font-serif font-black text-slate-900">Active Plates</h2><button className="text-[10px] font-black uppercase text-[#047857]">View All</button></div>
                             <div className="bg-white p-4 rounded-3xl shadow-xl border border-amber-50 flex gap-4 items-center">
-                                <div className="w-20 h-20 bg-slate-100 rounded-2xl overflow-hidden"><img src="https://images.unsplash.com/photo-1606471191009-63994c53433b?auto=format&fit=crop&w=200&q=80" className="w-full h-full object-cover" /></div>
+                                <div className="w-20 h-20 bg-slate-100 rounded-2xl overflow-hidden"><img src={MOCK_PLATES[0].imageUrl} className="w-full h-full object-cover" /></div>
                                 <div><h3 className="font-serif font-bold text-slate-900">The Sunday Plate</h3><div className="flex items-center gap-2 mt-1"><span className="text-xs font-black text-[#047857]">$32.00</span><span className="text-[8px] font-black uppercase text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">Live</span></div></div>
                             </div>
                         </div>
@@ -288,7 +298,6 @@
         const ResultsView = ({ plates, searchQuery, categoryFilter, userLocation, onOrderPlate, onCategoryChange, onSearchChange, onBack }) => (
             <div className="flex flex-col md:flex-row h-screen pt-20 bg-[#FFFBEB] overflow-hidden">
                 <div className="hidden md:block w-[40%] h-full relative border-r border-white/20 overflow-hidden">
-                     {/* The Real Interactive Map */}
                      <AtlantaMap />
                 </div>
                 <div className="w-full md:w-[60%] h-full overflow-y-auto pb-32 px-6 no-scrollbar">

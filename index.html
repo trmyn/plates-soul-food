@@ -12,6 +12,9 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #FFFBEB; }
@@ -20,9 +23,9 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes pulse-emerald { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
         .pulse-live { animation: pulse-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        /* Map Pin Animation */
-        @keyframes bounce-pin { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-        .pin-bounce { animation: bounce-pin 2s infinite ease-in-out; }
+        /* Clean Map Styles */
+        .leaflet-control-attribution { display: none !important; }
+        .custom-pin { background: #DC2626; border: 3px solid white; border-radius: 50%; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3); }
     </style>
 </head>
 <body>
@@ -36,6 +39,7 @@
             return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-block', verticalAlign: 'middle', fill: fill }}></i>;
         };
 
+        // Real Atlanta Coordinates
         const USER_LOCATIONS = [
             { name: 'West End', lat: 33.738, lng: -84.425 },
             { name: 'Midtown', lat: 33.783, lng: -84.383 },
@@ -50,6 +54,39 @@
             { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' }
         ];
 
+        // --- MAP COMPONENT (The Workaround) ---
+        const AtlantaMap = () => {
+            useEffect(() => {
+                // Ensure container exists
+                const container = document.getElementById('atlanta-map');
+                if (!container) return;
+                
+                // Prevent double initialization
+                if (container._leaflet_id) return;
+
+                // Initialize Leaflet Map centered on Atlanta
+                const map = L.map('atlanta-map', { zoomControl: false }).setView([33.76, -84.40], 12);
+
+                // Add nice, clean map tiles (CartoDB Voyager - looks like Google Maps)
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19
+                }).addTo(map);
+
+                // Add Red Pins for our locations
+                USER_LOCATIONS.forEach(loc => {
+                    const icon = L.divIcon({
+                        className: 'bg-transparent',
+                        html: `<div class="w-4 h-4 bg-red-600 rounded-full border-2 border-white shadow-lg"></div>`
+                    });
+                    L.marker([loc.lat, loc.lng], { icon: icon }).addTo(map);
+                });
+
+            }, []);
+
+            return <div id="atlanta-map" className="w-full h-full bg-slate-100"></div>;
+        };
+
+        // --- GLOBAL HEADER ---
         const GlobalHeader = ({ userLocation, onLocationChange, onStartCooking, isSellerMode, transparent = false }) => {
             const [isMenuOpen, setIsMenuOpen] = useState(false);
             return (
@@ -77,6 +114,7 @@
             );
         };
 
+        // --- SELLER PITCH ---
         const SellerPitch = ({ onNext, onBack }) => (
             <div className="min-h-screen bg-[#FFFBEB] pt-20 px-6 flex flex-col overflow-y-auto">
                 <button onClick={onBack} className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-6"><Icon name="arrow-left" /></button>
@@ -102,12 +140,12 @@
                             <p className="text-sm text-slate-500 leading-relaxed font-medium">Pro Membership: Just $99/year. (First month free!)</p>
                         </div>
                     </div>
-                    
                     <button onClick={onNext} className="w-full max-w-md py-6 bg-[#047857] text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-2xl hover:scale-[1.02] transition-transform">Join the Neighborhood <Icon name="arrow-right" /></button>
                 </div>
             </div>
         );
 
+        // --- SELLER PROFILE ---
         const SellerProfile = ({ onNext, onBack }) => {
             const [kitchen, setKitchen] = useState('');
             const [chef, setChef] = useState('');
@@ -128,6 +166,7 @@
             );
         }
 
+        // --- SELLER DASHBOARD ---
         const SellerDashboard = ({ kitchenName, onPost, onExit, loc }) => {
             const sales = 1250.00;
             const plates = 85;
@@ -224,6 +263,7 @@
             </div>
         );
 
+        // --- CHECKOUT VIEW ---
         const CheckoutView = ({ plate, onBack, onConfirm }) => {
             const [pickupTime, setPickupTime] = useState('ASAP');
             return (
@@ -258,24 +298,12 @@
             );
         };
 
+        // --- RESULTS VIEW (REAL OPENSTREETMAP) ---
         const ResultsView = ({ plates, searchQuery, categoryFilter, userLocation, onOrderPlate, onCategoryChange, onSearchChange, onBack }) => (
             <div className="flex flex-col md:flex-row h-screen pt-20 bg-[#FFFBEB] overflow-hidden">
-                <div className="hidden md:block w-[40%] h-full relative border-r border-white/20 overflow-hidden bg-slate-100">
-                     <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1200&q=80" className="w-full h-full object-cover grayscale opacity-50" />
-                     {/* Simulated Atlanta Pins */}
-                     <div className="absolute top-[20%] left-[50%] -translate-x-1/2 flex flex-col items-center group cursor-pointer hover:scale-110 transition-transform">
-                        <Icon name="map-pin" size={40} className="text-red-600 fill-red-600 drop-shadow-2xl pin-bounce" />
-                        <span className="bg-white px-2 py-1 rounded-md text-[10px] font-bold shadow-md mt-1">Buckhead</span>
-                     </div>
-                     <div className="absolute top-[45%] left-[55%] -translate-x-1/2 flex flex-col items-center group cursor-pointer hover:scale-110 transition-transform">
-                        <Icon name="map-pin" size={40} className="text-red-600 fill-red-600 drop-shadow-2xl" />
-                        <span className="bg-white px-2 py-1 rounded-md text-[10px] font-bold shadow-md mt-1">Midtown</span>
-                     </div>
-                     <div className="absolute bottom-[35%] left-[30%] -translate-x-1/2 flex flex-col items-center group cursor-pointer hover:scale-110 transition-transform">
-                        <Icon name="map-pin" size={40} className="text-red-600 fill-red-600 drop-shadow-2xl" />
-                        <span className="bg-white px-2 py-1 rounded-md text-[10px] font-bold shadow-md mt-1">West End</span>
-                     </div>
-                     <div className="absolute inset-0 flex items-end justify-center pointer-events-none pb-8"><div className="bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-xl font-bold text-xs text-slate-800 flex items-center gap-2">Interactive Map</div></div>
+                <div className="hidden md:block w-[40%] h-full relative border-r border-white/20 overflow-hidden">
+                     {/* The Real Interactive Map */}
+                     <AtlantaMap />
                 </div>
                 <div className="w-full md:w-[60%] h-full overflow-y-auto pb-32 px-6 no-scrollbar">
                     <div className="sticky top-0 bg-[#FFFBEB]/95 backdrop-blur py-4 z-10 border-b border-amber-100 mb-6">
@@ -294,7 +322,10 @@
                                     <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-[#047857] flex gap-1 items-center"><Icon name="clock" size={10} /> {plate.prepTime}</div>
                                 </div>
                                 <div className="px-2">
-                                    <div className="flex justify-between mb-2"><h3 className="font-serif text-xl text-slate-900 leading-tight">{plate.name}</h3><span className="font-black text-[#047857]">${plate.price}</span></div>
+                                    <div className="flex justify-between mb-2">
+                                        <h3 className="font-serif text-xl text-slate-900 leading-tight">{plate.name}</h3>
+                                        <span className="font-black text-[#047857]">${plate.price}</span>
+                                    </div>
                                     <p className="text-sm text-slate-500 mb-4 line-clamp-2">{plate.description}</p>
                                     <button onClick={() => onOrderPlate(plate)} className="w-full py-4 bg-[#047857] text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md">Order Now</button>
                                 </div>
@@ -305,6 +336,7 @@
             </div>
         );
 
+        // --- LANDING VIEW ---
         const LandingView = ({ onSearch, currentLocationName, onNeighborhoodChange, onStartCooking }) => {
             const [localQuery, setLocalQuery] = useState('');
             const [isLocOpen, setIsLocOpen] = useState(false);

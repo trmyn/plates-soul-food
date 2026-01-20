@@ -8,13 +8,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.294.0/umd/lucide.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #FFFBEB; }
@@ -24,9 +25,7 @@
         @keyframes pulse-emerald { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
         .pulse-live { animation: pulse-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         .leaflet-control-attribution { display: none !important; }
-        /* Custom Pins */
         .custom-pin { background-color: #DC2626; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .map-loading { background: #f5f5f4; display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; color: #a8a29e; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
     </style>
 </head>
 <body>
@@ -35,8 +34,13 @@
     <script type="text/babel" data-presets="react,typescript">
         const { useState, useMemo, useEffect, useRef } = React;
 
+        // --- ICON COMPONENT (Fixed) ---
         const Icon = ({ name, size=20, className, fill }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            useEffect(() => { 
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]); // Re-run when icon name changes
             return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-block', verticalAlign: 'middle', fill: fill }}></i>;
         };
 
@@ -48,55 +52,43 @@
             { name: 'East Point', lat: 33.679, lng: -84.439 }
         ];
 
-        // --- UPDATED OXTAIL IMAGE ---
+        // --- FOOD DATA (With Your Specific Oxtail Image) ---
         const MOCK_PLATES = [
             { id: 'we-1', name: 'The Sunday Plate (Oxtails)', cook: "Mama Louise's Kitchen", price: 32.00, rating: 5.0, distanceNum: 0.8, prepTime: '25m', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa8eNM-7pRYAzLFvyTAiwq0mb5k4KcKwRJtA&s', isVerified: true, isLive: true, neighborhood: 'West End', category: 'Oxtails', description: 'Slow-braised oxtails in a deep brown gravy served over white rice with mac and yams.' },
             { id: 'we-2', name: 'Buttermilk Fried Chicken', cook: "Auntie Pearl", price: 18.50, rating: 4.8, distanceNum: 0.5, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'West End', category: 'Main', description: 'Crispy, hand-battered fried chicken with a side of honey-buttered cornbread.' },
-            { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' }
+            { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' }
         ];
 
-        // --- MAP COMPONENT (OPTIMIZED CDN) ---
+        // --- MAP COMPONENT (Standard OSM Tiles - Very Reliable) ---
         const AtlantaMap = () => {
             const mapRef = useRef(null);
-            const [isLoaded, setIsLoaded] = useState(false);
 
             useEffect(() => {
-                if (mapRef.current) return; // Prevent double load
+                if (mapRef.current) return;
 
-                // Small delay to ensure DOM is ready and allow loading screen to appear
-                setTimeout(() => {
-                     const map = L.map('atlanta-map', { zoomControl: false, attributionControl: false }).setView([33.7537, -84.3863], 11);
-                     mapRef.current = map;
+                // 1. Initialize Map
+                const map = L.map('atlanta-map', { zoomControl: false }).setView([33.7537, -84.3863], 11);
+                mapRef.current = map;
 
-                     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                         maxZoom: 20
-                     }).addTo(map);
+                // 2. Use Standard OpenStreetMap Tiles (Most Reliable)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(map);
 
-                     USER_LOCATIONS.forEach(loc => {
-                         const icon = L.divIcon({
-                             className: 'bg-transparent',
-                             html: `<div class="custom-pin"></div>`
-                         });
-                         L.marker([loc.lat, loc.lng], { icon: icon }).addTo(map);
-                     });
-                     
-                     map.on('load', () => {
-                        setIsLoaded(true);
-                     });
-                     // Force load event if it fired before listener attached
-                     setTimeout(() => setIsLoaded(true), 500);
-                }, 100);
-
+                // 3. Add Pins
+                USER_LOCATIONS.forEach(loc => {
+                    const icon = L.divIcon({
+                        className: 'bg-transparent',
+                        html: `<div class="custom-pin"></div>`
+                    });
+                    L.marker([loc.lat, loc.lng], { icon: icon }).addTo(map);
+                });
             }, []);
 
-            return (
-                <div className="relative w-full h-full">
-                    <div id="atlanta-map" className={`w-full h-full z-0 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
-                    {!isLoaded && <div className="absolute inset-0 map-loading">Loading Atlanta Map...</div>}
-                </div>
-            );
+            return <div id="atlanta-map" className="w-full h-full bg-slate-200 z-0"></div>;
         };
 
+        // --- GLOBAL HEADER ---
         const GlobalHeader = ({ userLocation, onLocationChange, onStartCooking, isSellerMode, transparent = false }) => {
             const [isMenuOpen, setIsMenuOpen] = useState(false);
             return (
@@ -226,205 +218,4 @@
                  <button onClick={onBack} className="self-start mb-6 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center"><Icon name="arrow-left" /></button>
                  <div className="w-full max-w-md space-y-4">
                     <h1 className="text-3xl font-serif font-black text-slate-900">Post a Plate</h1>
-                    <div className="h-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 gap-2"><Icon name="camera" size={24} /><span className="text-xs font-bold uppercase">Upload Photo</span></div>
-                    <input placeholder="Dish Name" className="w-full p-4 bg-slate-50 rounded-xl" />
-                    <input placeholder="Description" className="w-full p-4 bg-slate-50 rounded-xl" />
-                    <input placeholder="Price ($)" type="number" className="w-full p-4 bg-slate-50 rounded-xl" />
-                    <button onClick={onNext} className="w-full py-5 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl mt-4">Next: Logistics</button>
-                 </div>
-            </div>
-        );
-
-        const SellerLogistics = ({ onNext, onBack }) => (
-            <div className="min-h-screen bg-white pt-24 px-6 flex flex-col items-center">
-                 <button onClick={onBack} className="self-start mb-6 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center"><Icon name="arrow-left" /></button>
-                 <div className="w-full max-w-md space-y-4">
-                    <h1 className="text-3xl font-serif font-black text-slate-900">Logistics</h1>
-                    <input placeholder="Pickup Address" className="w-full p-4 bg-slate-50 rounded-xl" />
-                    <input placeholder="Ready Time (e.g. 5:00 PM)" className="w-full p-4 bg-slate-50 rounded-xl" />
-                    <button onClick={onNext} className="w-full py-5 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl mt-4">Review Plate</button>
-                 </div>
-            </div>
-        );
-
-        const SellerReview = ({ onNext, onBack }) => (
-            <div className="min-h-screen bg-[#FFFBEB] pt-24 px-6 flex flex-col items-center">
-                 <button onClick={onBack} className="self-start mb-6 w-10 h-10 bg-white rounded-full flex items-center justify-center"><Icon name="arrow-left" /></button>
-                 <div className="w-full max-w-md">
-                    <h1 className="text-3xl font-serif font-black text-slate-900 mb-6">Review</h1>
-                    <div className="bg-white p-4 rounded-[2rem] shadow-xl border border-amber-50 mb-8 text-center">
-                        <div className="h-48 bg-slate-100 rounded-[1.5rem] mb-4 flex items-center justify-center"><Icon name="utensils" size={40} className="text-slate-300"/></div>
-                        <h3 className="text-2xl font-serif font-bold">Oxtails & Rice</h3>
-                        <p className="font-black text-[#047857] mt-1 text-xl">$25.00</p>
-                    </div>
-                    <button onClick={onNext} className="w-full py-5 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Publish Listing</button>
-                 </div>
-            </div>
-        );
-
-        const SellerSuccess = ({ onFinish }) => (
-            <div className="min-h-screen bg-[#FFFBEB] flex flex-col items-center justify-center px-6 text-center">
-                <div className="w-24 h-24 bg-emerald-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl animate-bounce"><Icon name="check-circle" size={48} /></div>
-                <h1 className="text-4xl font-serif font-black text-slate-900 mb-4">You're Live!</h1>
-                <p className="text-slate-500 mb-8 text-lg">Your neighbors can now order your food.</p>
-                <button onClick={onFinish} className="w-full max-w-sm py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Go to Dashboard</button>
-            </div>
-        );
-
-        // --- CHECKOUT VIEW ---
-        const CheckoutView = ({ plate, onBack, onConfirm }) => {
-            const [pickupTime, setPickupTime] = useState('ASAP');
-            return (
-                <div className="min-h-screen bg-white pb-32 pt-24">
-                    <div className="px-6 max-w-xl mx-auto">
-                        <button onClick={onBack} className="mb-4 flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest"><Icon name="arrow-left" size={16}/> Back</button>
-                        <h1 className="text-3xl font-serif font-black text-slate-900 mb-8">Checkout</h1>
-                        <div className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 mb-8">
-                            <img src={plate.imageUrl} className="w-24 h-24 rounded-xl object-cover" />
-                            <div className="flex flex-col justify-center"><h3 className="text-lg font-serif font-bold text-slate-900">{plate.name}</h3><p className="text-sm text-[#047857] font-bold uppercase tracking-wider mt-1">from {plate.cook}</p><p className="text-xl font-black text-slate-900 mt-2">${plate.price.toFixed(2)}</p></div>
-                        </div>
-                        <div className="space-y-4 mb-8">
-                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Pick-up Time</h4>
-                            <div className="grid grid-cols-2 gap-3">
-                                {['ASAP', 'In 30 mins', 'In 1 hour', 'Later Today'].map((time) => (
-                                    <button key={time} onClick={() => setPickupTime(time)} className={`py-4 px-4 rounded-xl text-xs font-bold transition-all border-2 ${pickupTime === time ? 'border-[#047857] bg-emerald-50 text-[#047857]' : 'border-slate-100 text-slate-500'}`}>{time}</button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="space-y-6 mb-8">
-                            <div><h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Pickup Location</h4><div className="flex items-center gap-4 p-4 border-2 border-slate-100 rounded-2xl"><div className="p-3 bg-emerald-50 text-[#047857] rounded-xl"><Icon name="map-pin" /></div><div><p className="font-bold text-slate-900">{plate.neighborhood} Hub</p><p className="text-xs text-slate-500">Address shared after confirmation</p></div></div></div>
-                            <div><h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Payment Method</h4><div className="flex items-center justify-between p-4 border-2 border-slate-100 rounded-2xl"><div className="flex items-center gap-4"><Icon name="credit-card" className="text-slate-400" /><span className="font-bold text-slate-900">•••• 4242</span></div><span className="text-[10px] font-black uppercase text-[#047857]">Change</span></div></div>
-                        </div>
-                        <div className="border-t border-slate-100 pt-6 space-y-3 mb-8">
-                            <div className="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span>${plate.price.toFixed(2)}</span></div>
-                            <div className="flex justify-between text-sm text-slate-500"><span>Service Fee</span><span>$2.50</span></div>
-                            <div className="flex justify-between text-xl font-black text-slate-900 pt-2"><span>Total</span><span>${(plate.price + 2.5).toFixed(2)}</span></div>
-                        </div>
-                        <button onClick={onConfirm} className="w-full py-5 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] transition-transform">Confirm Order <Icon name="shopping-bag" size={16} /></button>
-                    </div>
-                </div>
-            );
-        };
-
-        const ResultsView = ({ plates, searchQuery, categoryFilter, userLocation, onOrderPlate, onCategoryChange, onSearchChange, onBack }) => (
-            <div className="flex flex-col md:flex-row h-screen pt-20 bg-[#FFFBEB] overflow-hidden">
-                <div className="hidden md:block w-[40%] h-full relative border-r border-white/20 overflow-hidden">
-                     <AtlantaMap />
-                </div>
-                <div className="w-full md:w-[60%] h-full overflow-y-auto pb-32 px-6 no-scrollbar">
-                    <div className="sticky top-0 bg-[#FFFBEB]/95 backdrop-blur py-4 z-10 border-b border-amber-100 mb-6">
-                        <div className="flex gap-2 items-center mb-4">
-                            <button onClick={onBack}><Icon name="arrow-left" className="text-slate-400" /></button>
-                            <input type="text" placeholder="Search plates..." value={searchQuery} onChange={e => onSearchChange(e.target.value)} className="w-full p-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-[#047857]" />
-                        </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">{["Ribs", "Oxtails", "Yams", "Greens"].map(cat => <button key={cat} onClick={() => onCategoryChange(cat === categoryFilter ? null : cat)} className={`px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border flex-shrink-0 ${cat === categoryFilter ? 'bg-[#047857] text-white border-[#047857]' : 'bg-white border-amber-100 text-slate-500'}`}>{cat}</button>)}</div>
-                    </div>
-                    <div className="space-y-8">
-                        <div className="flex justify-between items-end"><h2 className="text-3xl font-serif font-black text-slate-900">{userLocation.name} Plates</h2><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{plates.length} found</span></div>
-                        {plates.map(plate => (
-                            <div key={plate.id} className="bg-white p-4 rounded-[2rem] shadow-lg border border-amber-50 hover:scale-[1.01] transition-transform">
-                                <div className="relative h-48 rounded-[1.5rem] overflow-hidden mb-4">
-                                    <img src={plate.imageUrl} className="w-full h-full object-cover" />
-                                    <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-[#047857] flex gap-1 items-center"><Icon name="clock" size={10} /> {plate.prepTime}</div>
-                                </div>
-                                <div className="px-2">
-                                    <div className="flex justify-between mb-2">
-                                        <h3 className="font-serif text-xl text-slate-900 leading-tight">{plate.name}</h3>
-                                        <span className="font-black text-[#047857]">${plate.price}</span>
-                                    </div>
-                                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{plate.description}</p>
-                                    <button onClick={() => onOrderPlate(plate)} className="w-full py-4 bg-[#047857] text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md">Order Now</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-
-        const LandingView = ({ onSearch, currentLocationName, onNeighborhoodChange, onStartCooking }) => {
-            const [localQuery, setLocalQuery] = useState('');
-            const [isLocOpen, setIsLocOpen] = useState(false);
-            const categories = ["Ribs", "Oxtails", "Yams", "Greens"];
-            return (
-                <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#FFFBEB]">
-                    <div className="w-full md:w-1/2 h-[50vh] md:h-screen relative overflow-hidden">
-                        <img src="https://147611588.cdn6.editmysite.com/uploads/1/4/7/6/147611588/EEVYVMTD47S5OH7KZS7RHKW4.png?width=2400&optimize=medium" alt="Cajun Fried Chicken" className="w-full h-full object-cover brightness-95" />
-                        <div className="absolute inset-0 bg-black/20" />
-                        <div className="absolute bottom-12 left-12 hidden md:block bg-black/40 backdrop-blur-md p-8 pb-10 rounded-3xl border border-white/20 max-w-2xl">
-                            <p className="text-white text-xl font-serif font-bold mb-2 whitespace-nowrap">Most Popular: Cajun Fried Chicken</p>
-                            <p className="text-white/80 text-sm leading-relaxed mb-6">Tossed in our sticky sauce. Served with 2 sides.</p>
-                            <div className="flex flex-col items-center">
-                                <button onClick={onStartCooking} className="w-full py-4 bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-orange-700 transition-all">Earn Cash Cooking</button>
-                                <a href="https://forms.gle/uen69Gc3WZx1ZqNR8" target="_blank" className="text-sm text-white underline mt-3 hover:text-emerald-200">Join Waitlist</a>
-                                <p className="mt-2 text-[8px] text-white/60 uppercase tracking-widest">For demo purposes only.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="w-full md:w-1/2 flex flex-col px-8 md:px-20 py-12 md:py-0 justify-center">
-                        <div className="max-w-xl mx-auto w-full">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-100 text-[#C2410C] text-[10px] font-black uppercase tracking-[0.2em] mb-8 rounded-full border border-amber-200"><Icon name="map-pin" size={12} /> Atlanta Metro</div>
-                            <h1 className="text-5xl md:text-7xl font-serif leading-[1.1] mb-10 text-slate-900 tracking-tight">Real Soul Food.<br /><span className="text-[#047857]">Not on Facebook.</span><br />Right in your neighborhood.</h1>
-                            <div className="space-y-6">
-                                <div className="relative">
-                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Pick-up neighborhood (under 10 min drive)</label>
-                                    <button onClick={() => setIsLocOpen(!isLocOpen)} className="w-full flex items-center justify-between px-6 py-5 bg-white border-2 border-amber-50 rounded-2xl shadow-sm hover:border-[#047857]/30 transition-all text-left">
-                                        <div className="flex items-center gap-4 text-[#047857]"><Icon name="map-pin" size={20} /><span className="text-lg font-bold uppercase tracking-widest">{currentLocationName}</span></div>
-                                        <Icon name="chevron-down" size={20} className={isLocOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
-                                    </button>
-                                    {isLocOpen && (<div className="absolute top-full left-0 right-0 z-20 mt-2 bg-white rounded-2xl shadow-2xl border border-amber-50 py-3 overflow-hidden animate-in fade-in zoom-in-95 duration-200">{USER_LOCATIONS.map((loc) => (<button key={loc.name} onClick={() => { onNeighborhoodChange(loc.name); setIsLocOpen(false); }} className={`w-full text-left px-6 py-4 text-sm font-bold uppercase tracking-widest hover:bg-amber-50 transition-colors ${currentLocationName === loc.name ? 'text-[#047857] bg-emerald-50' : 'text-slate-500'}`}>{loc.name}</button>))}</div>)}
-                                </div>
-                                <form onSubmit={(e) => { e.preventDefault(); onSearch(localQuery, null); }} className="space-y-4">
-                                    <div className="relative"><div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"><Icon name="search" size={20} /></div><input type="text" placeholder="What are you craving?" value={localQuery} onChange={(e) => setLocalQuery(e.target.value)} className="w-full pl-14 pr-6 py-6 bg-white border-2 border-amber-50 rounded-2xl focus:outline-none focus:border-[#047857] transition-all text-lg font-medium shadow-sm" /></div>
-                                    <div className="flex flex-wrap gap-2 px-1">{categories.map(cat => (<button key={cat} type="button" onClick={() => onSearch('', cat)} className="px-5 py-2.5 bg-white border border-amber-100 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-[#047857] hover:text-[#047857] hover:bg-emerald-50 transition-all shadow-sm">{cat}</button>))}</div>
-                                    <button type="submit" className="w-full py-6 mt-4 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-[#065f46] transition-all transform hover:-translate-y-1 shadow-2xl shadow-emerald-950/20 active:scale-[0.98]">Find My Plate <Icon name="arrow-right" size={20} /></button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const App = () => {
-            const [view, setView] = useState('landing');
-            const [searchQuery, setSearchQuery] = useState('');
-            const [categoryFilter, setCategoryFilter] = useState(null);
-            const [userLocation, setUserLocation] = useState(USER_LOCATIONS[0]);
-            const [selectedPlate, setSelectedPlate] = useState(null);
-            const [sellerData, setSellerData] = useState({});
-
-            const filteredPlates = useMemo(() => {
-                let plates = MOCK_PLATES.filter(p => p.neighborhood === userLocation.name);
-                if (categoryFilter) plates = plates.filter(p => p.category.toLowerCase().includes(categoryFilter.toLowerCase()));
-                if (searchQuery) plates = plates.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-                return plates;
-            }, [searchQuery, userLocation, categoryFilter]);
-
-            const handleStartCooking = () => setView('seller-pitch');
-            const handleLocChange = (n) => { const l = USER_LOCATIONS.find(x=>x.name===n); if(l) setUserLocation(l); };
-
-            if (view === 'seller-pitch') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={true} /><SellerPitch onNext={() => setView('seller-profile')} onBack={() => setView('landing')} /></>;
-            if (view === 'seller-profile') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={true} /><SellerProfile onNext={(data) => { setSellerData({...sellerData, ...data}); setView('seller-dashboard'); }} onBack={() => setView('seller-pitch')} /></>;
-            if (view === 'seller-dashboard') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={true} /><SellerDashboard kitchenName={sellerData.kitchenName} onPostNewPlate={() => setView('seller-dish')} onBackToBuying={() => setView('landing')} neighborhood={userLocation.name} loc={userLocation.name} onPost={() => setView('seller-dish')} onExit={() => setView('landing')} /></>;
-            if (view === 'seller-dish') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={true} /><SellerDish onNext={() => setView('seller-logistics')} onBack={() => setView('seller-dashboard')} /></>;
-            if (view === 'seller-logistics') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={true} /><SellerLogistics onNext={() => setView('seller-review')} onBack={() => setView('seller-dish')} /></>;
-            if (view === 'seller-review') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={true} /><SellerReview onNext={() => setView('seller-success')} onBack={() => setView('seller-logistics')} /></>;
-            if (view === 'seller-success') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={true} /><SellerSuccess onFinish={() => setView('seller-dashboard')} /></>;
-
-            if (view === 'checkout' && selectedPlate) return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={false} /><CheckoutView plate={selectedPlate} onBack={() => setView('results')} onConfirm={() => { alert('Demo Order Confirmed!'); setView('landing'); }} /></>;
-            if (view === 'results') return <><GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={false} /><ResultsView plates={filteredPlates} searchQuery={searchQuery} categoryFilter={categoryFilter} userLocation={userLocation} onOrderPlate={(p) => { setSelectedPlate(p); setView('checkout'); }} onCategoryChange={setCategoryFilter} onSearchChange={setSearchQuery} onBack={() => setView('landing')} /></>;
-            
-            return (
-                <>
-                    <GlobalHeader userLocation={userLocation} onLocationChange={handleLocChange} onStartCooking={handleStartCooking} isSellerMode={false} transparent={true} />
-                    <LandingView onSearch={(q, cat) => { setSearchQuery(q); setCategoryFilter(cat); setView('results'); }} currentLocationName={userLocation.name} onNeighborhoodChange={handleLocChange} onStartCooking={handleStartCooking} />
-                </>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                    <div className="h-40 bg-slate-50 rounded-3xl border-2 border-

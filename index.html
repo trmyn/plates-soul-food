@@ -11,16 +11,23 @@
     
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #FFFBEB; }
-        h1, h2, .font-serif { font-family: 'Playfair Display', serif; }
+        h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes pulse-emerald {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.7; }
+        }
+        .pulse-live {
+          animation: pulse-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
     </style>
 </head>
 <body>
@@ -28,9 +35,10 @@
 
     <script type="text/babel" data-presets="react,typescript">
         const { useState, useMemo, useEffect } = React;
-        const { Search, MapPin, ArrowRight, ChevronDown, CheckCircle, ChefHat, User, Star, Clock } = lucide;
+        // Load all icons we need
+        const { Search, MapPin, ArrowRight, ChevronDown, CheckCircle, ChefHat, User, Star, Clock, X, ArrowLeft } = lucide;
 
-        // --- DATA ---
+        // --- 1. DATA ---
         const USER_LOCATIONS = [
             { name: 'West End', lat: 33.738, lng: -84.425 },
             { name: 'Midtown', lat: 33.783, lng: -84.383 },
@@ -40,46 +48,201 @@
         ];
 
         const MOCK_PLATES = [
-            { id: 'we-1', name: 'The Sunday Plate (Oxtails)', cook: "Mama Louise's Kitchen", price: 32.00, rating: 5.0, distanceNum: 0.8, prepTime: '25m', imageUrl: 'https://images.unsplash.com/photo-1606471191009-63994c53433b?auto=format&fit=crop&w=800&q=80', neighborhood: 'West End', category: 'Oxtails', description: 'Slow-braised oxtails in a deep brown gravy served over white rice with mac and yams.' },
-            { id: 'we-2', name: 'Buttermilk Fried Chicken', cook: "Auntie Pearl", price: 18.50, rating: 4.8, distanceNum: 0.5, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1569058242253-92a9c73f49ec?auto=format&fit=crop&w=800&q=80', neighborhood: 'West End', category: 'Main', description: 'Crispy, hand-battered fried chicken with a side of honey-buttered cornbread.' },
-            { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80', neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' },
-            { id: 'bh-1', name: 'Lobster Mac & Cheese', cook: "The Buckhead Estate", price: 38.00, rating: 4.9, distanceNum: 0.9, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80', neighborhood: 'Buckhead', category: 'Main', description: 'Indulgent macaroni with butter-poached lobster and white truffle oil.' },
-            { id: 'dc-1', name: 'Smothered Turkey Wings', cook: "Decatur Comfort", price: 22.00, rating: 4.8, distanceNum: 0.4, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=800&q=80', neighborhood: 'Decatur', category: 'Main', description: 'Fall-off-the-bone turkey wings in a savory homemade gravy.' },
-            { id: 'ep-1', name: 'BBQ Ribs Slab', cook: "East Point Pit", price: 26.00, rating: 4.8, distanceNum: 0.9, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', neighborhood: 'East Point', category: 'Ribs', description: 'St. Louis style ribs smoked over hickory for 12 hours.' }
+            { id: 'we-1', name: 'The Sunday Plate (Oxtails)', cook: "Mama Louise's Kitchen", price: 32.00, rating: 5.0, distanceNum: 0.8, prepTime: '25m', imageUrl: 'https://images.unsplash.com/photo-1606471191009-63994c53433b?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'West End', category: 'Oxtails', description: 'Slow-braised oxtails in a deep brown gravy served over white rice with mac and yams.' },
+            { id: 'we-2', name: 'Buttermilk Fried Chicken', cook: "Auntie Pearl", price: 18.50, rating: 4.8, distanceNum: 0.5, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1569058242253-92a9c73f49ec?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'West End', category: 'Main', description: 'Crispy, hand-battered fried chicken with a side of honey-buttered cornbread.' },
+            { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' },
+            { id: 'bh-1', name: 'Lobster Mac & Cheese', cook: "The Buckhead Estate", price: 38.00, rating: 4.9, distanceNum: 0.9, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Buckhead', category: 'Main', description: 'Indulgent macaroni with butter-poached lobster and white truffle oil.' },
+            { id: 'dc-1', name: 'Smothered Turkey Wings', cook: "Decatur Comfort", price: 22.00, rating: 4.8, distanceNum: 0.4, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Decatur', category: 'Main', description: 'Fall-off-the-bone turkey wings in a savory homemade gravy.' },
+            { id: 'ep-1', name: 'BBQ Ribs Slab', cook: "East Point Pit", price: 26.00, rating: 4.8, distanceNum: 0.9, prepTime: '15m', imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'East Point', category: 'Ribs', description: 'St. Louis style ribs smoked over hickory for 12 hours.' }
         ];
 
-        // --- YOUR CUSTOM LANDING VIEW ---
+        // --- 2. COMPONENTS ---
+
+        // Helper Icon Component
+        const Icon = ({ name, size=20, className, fill }) => {
+            // Force Lucide to scan for new icons
+            useEffect(() => { lucide.createIcons(); });
+            return <i data-lucide={name} className={className} style={{ width: size, height: size, fill: fill }}></i>;
+        };
+
+        // *** DISCOVERY FEED (The Food Cards) ***
+        const DiscoveryFeed = ({ plates, searchQuery, onOrderPlate, hideHeader = false }) => {
+            return (
+                <div className="space-y-8">
+                {!hideHeader && (
+                    <header className="px-6 pt-24 pb-8">
+                    <p className="text-[#C2410C] text-[10px] font-black uppercase tracking-[0.2em] mb-2">Available Now</p>
+                    <h2 className="text-4xl font-serif text-slate-900">Local discovery feed</h2>
+                    </header>
+                )}
+
+                <main className={`${!hideHeader ? 'px-6 max-w-2xl mx-auto' : ''} space-y-8`}>
+                    {plates.map((plate) => (
+                    <div key={plate.id} className="bg-white rounded-[2rem] p-4 shadow-xl shadow-emerald-950/5 border border-amber-50 group transition-all hover:shadow-emerald-950/10">
+                        <div className="relative aspect-[16/10] overflow-hidden rounded-[1.5rem] mb-6">
+                        <img 
+                            src={plate.imageUrl} 
+                            alt={plate.name} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                        <div className="absolute top-4 left-4 flex gap-2">
+                            <div className="bg-white/95 backdrop-blur px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                            <Icon name="map-pin" size={10} className="text-[#047857]" />
+                            <span className="text-[10px] font-black text-[#047857] uppercase tracking-wider">
+                                {plate.distanceNum.toFixed(1)} miles away
+                            </span>
+                            </div>
+                            <div className="bg-white/95 backdrop-blur px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                            <Icon name="clock" size={10} className="text-[#C2410C]" />
+                            <span className="text-[10px] font-black text-[#C2410C] uppercase tracking-wider">Ready in {plate.prepTime}</span>
+                            </div>
+                        </div>
+                        {plate.isLive && (
+                            <div className="absolute top-4 right-4 bg-emerald-500 text-white px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 border border-emerald-400">
+                            <div className="w-1.5 h-1.5 bg-white rounded-full pulse-live" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Live</span>
+                            </div>
+                        )}
+                        </div>
+
+                        <div className="px-2 pb-2">
+                        <div className="flex justify-between items-start mb-3">
+                            <div>
+                            <h3 className="text-2xl font-serif text-slate-900 mb-1 leading-tight">{plate.name}</h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] flex items-center gap-1.5">
+                                {plate.cook}
+                                {plate.isVerified && <Icon name="check-circle" size={14} className="text-blue-500" />}
+                                </span>
+                            </div>
+                            </div>
+                            <div className="text-right">
+                            <div className="text-2xl font-black text-[#047857] tracking-tighter">${plate.price.toFixed(0)}</div>
+                            <div className="flex items-center justify-end gap-1 text-amber-500 font-bold text-xs mt-1">
+                                <Icon name="star" size={12} fill="currentColor" />
+                                {plate.rating}
+                            </div>
+                            </div>
+                        </div>
+
+                        <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-2">
+                            {plate.description}
+                        </p>
+
+                        <button 
+                            onClick={() => onOrderPlate(plate)}
+                            className="w-full py-4 bg-[#047857] text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-emerald-950/20 active:scale-[0.97] transition-all hover:bg-[#065f46]"
+                        >
+                            Order This Plate
+                        </button>
+                        </div>
+                    </div>
+                    ))}
+
+                    {plates.length === 0 && (
+                    <div className="py-24 text-center">
+                        <h3 className="text-xl font-serif text-slate-400">No plates found in this area</h3>
+                        <p className="text-sm text-slate-400 mt-2">Try selecting a different pick-up area or clearing filters.</p>
+                    </div>
+                    )}
+                </main>
+                </div>
+            );
+        };
+
+        // *** RESULTS VIEW (The Menu Page) ***
+        const ResultsView = ({ plates, searchQuery, categoryFilter, userLocation, onOrderPlate, onCategoryChange, onSearchChange, onBack }) => {
+            const categories = ["Ribs", "Oxtails", "Yams", "Greens"];
+
+            // Mock Map for now
+            const MapInterface = () => (
+                <div className="w-full h-full bg-stone-200 flex flex-col items-center justify-center text-stone-400 gap-4">
+                    <Icon name="map-pin" size={48} className="opacity-20"/>
+                    <span className="font-bold uppercase tracking-widest text-xs">Map Loading...</span>
+                </div>
+            );
+
+            return (
+                <div className="flex flex-col md:flex-row h-screen pt-20 overflow-hidden bg-[#FFFBEB]">
+                {/* LEFT SIDE: Map (40% width fixed) */}
+                <div className="w-full md:w-[40%] h-[35vh] md:h-full relative border-r border-emerald-100 shadow-inner hidden md:block">
+                    <MapInterface />
+                </div>
+
+                {/* RIGHT SIDE: Feed (60% width scrollable) */}
+                <div className="w-full md:w-[60%] h-full overflow-y-auto pb-32 no-scrollbar">
+                    <div className="sticky top-0 z-10 bg-[#FFFBEB]/90 backdrop-blur-md px-6 py-6 border-b border-amber-100">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-2">
+                            <button onClick={onBack} className="md:hidden p-2 -ml-2 text-stone-400"><Icon name="arrow-left"/></button>
+                            <div className="relative w-full">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><Icon name="search" size={18}/></div>
+                                <input 
+                                    type="text" 
+                                    placeholder="What are you craving?"
+                                    value={searchQuery}
+                                    onChange={(e) => onSearchChange(e.target.value)}
+                                    className="w-full pl-11 pr-4 py-3 bg-white border border-amber-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#047857]/20 outline-none shadow-sm"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2">
+                        {categoryFilter && (
+                            <button onClick={() => onCategoryChange(null)} className="px-4 py-2 bg-[#047857] text-white rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
+                            {categoryFilter} <Icon name="x" size={10} />
+                            </button>
+                        )}
+                        {categories.map(cat => (
+                            cat.toLowerCase() !== (categoryFilter || '').toLowerCase() && (
+                            <button key={cat} onClick={() => onCategoryChange(cat)} className="px-4 py-2 bg-white border border-amber-100 rounded-full text-[9px] font-black uppercase tracking-widest text-slate-500 hover:border-[#047857] transition-all shadow-sm">
+                                {cat}
+                            </button>
+                            )
+                        ))}
+                        </div>
+                    </div>
+                    </div>
+
+                    <div className="px-6 py-8">
+                    <div className="flex justify-between items-end mb-8">
+                        <div>
+                        <p className="text-[#C2410C] text-[10px] font-black uppercase tracking-[0.2em] mb-1">Local discovery</p>
+                        <h2 className="text-3xl font-serif text-slate-900">{userLocation.name} Plates</h2>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {plates.length} kitchens found
+                        </span>
+                    </div>
+                    <DiscoveryFeed plates={plates} searchQuery={searchQuery} onOrderPlate={onOrderPlate} hideHeader />
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        // *** LANDING VIEW (Your real one) ***
         const LandingView = ({ onSearch, currentLocationName, onNeighborhoodChange, onStartCooking }) => {
             const [localQuery, setLocalQuery] = useState('');
             const [isLocOpen, setIsLocOpen] = useState(false);
             const categories = ["Ribs", "Oxtails", "Yams", "Greens"];
-
             const handleSearchSubmit = (e) => { e.preventDefault(); onSearch(localQuery, null); };
             const handleChipClick = (cat) => { onSearch('', cat); };
 
-            // Helper for icons since we are in browser-mode
-            const Icon = ({ name, size=20, className }) => <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
-
             return (
                 <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#FFFBEB]">
-                    {/* Left Side: Hero Section */}
                     <div className="w-full md:w-1/2 h-[50vh] md:h-screen relative overflow-hidden">
-                        <img src="https://147611588.cdn6.editmysite.com/uploads/1/4/7/6/147611588/EEVYVMTD47S5OH7KZS7RHKW4.png?width=2400&optimize=medium" 
-                            alt="Cajun Fried Chicken & Shrimp" className="w-full h-full object-cover brightness-95" />
+                        <img src="https://147611588.cdn6.editmysite.com/uploads/1/4/7/6/147611588/EEVYVMTD47S5OH7KZS7RHKW4.png?width=2400&optimize=medium" alt="Cajun Fried Chicken & Shrimp" className="w-full h-full object-cover brightness-95" />
                         <div className="absolute inset-0 bg-black/20" />
                         <div className="absolute bottom-12 left-12 hidden md:block bg-black/40 backdrop-blur-md p-8 rounded-3xl border border-white/20 max-sm">
                             <p className="text-white text-xl font-serif font-bold mb-2">Most Popular: Cajun Fried Chicken & Shrimp</p>
                             <p className="text-white/80 text-sm leading-relaxed mb-6">Tossed in our sticky sauce. Served with 2 sides.</p>
                             <div className="flex flex-col items-center">
-                                <button onClick={onStartCooking} className="w-full py-4 bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-orange-950/20 hover:bg-orange-700 transition-all active:scale-[0.98]">
-                                    Earn Cash Cooking
-                                </button>
+                                <button onClick={onStartCooking} className="w-full py-4 bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-orange-950/20 hover:bg-orange-700 transition-all active:scale-[0.98]">Earn Cash Cooking</button>
                                 <p className="mt-2 text-[10px] text-white/80 uppercase tracking-widest">For demo purposes only.</p>
                             </div>
                         </div>
                     </div>
-
-                    {/* Right Side: Action Section */}
                     <div className="w-full md:w-1/2 flex flex-col px-8 md:px-20 py-24 md:py-0">
                         <div className="flex-1 flex flex-col justify-center">
                             <div className="max-w-xl">
@@ -87,32 +250,23 @@
                                     <Icon name="map-pin" size={12} /> Atlanta Metro
                                 </div>
                                 <h1 className="text-5xl md:text-7xl font-serif leading-[1.1] mb-10 text-slate-900 tracking-tight">
-                                    Real Soul Food.<br />
-                                    <span className="text-[#047857]">Not on Facebook.</span><br />
-                                    Right in your neighborhood.
+                                    Real Soul Food.<br /><span className="text-[#047857]">Not on Facebook.</span><br />Right in your neighborhood.
                                 </h1>
-                                
                                 <div className="space-y-6">
                                     <div className="relative">
                                         <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Pick-up neighborhood (under 10 min drive)</label>
                                         <button onClick={() => setIsLocOpen(!isLocOpen)} className="w-full flex items-center justify-between px-6 py-5 bg-white border-2 border-amber-50 rounded-2xl shadow-sm hover:border-[#047857]/30 transition-all">
-                                            <div className="flex items-center gap-4 text-[#047857]">
-                                                <Icon name="map-pin" size={20} />
-                                                <span className="text-lg font-bold uppercase tracking-widest">{currentLocationName}</span>
-                                            </div>
+                                            <div className="flex items-center gap-4 text-[#047857]"><Icon name="map-pin" size={20} /><span className="text-lg font-bold uppercase tracking-widest">{currentLocationName}</span></div>
                                             <Icon name="chevron-down" size={20} className={isLocOpen ? 'rotate-180' : ''} />
                                         </button>
                                         {isLocOpen && (
                                             <div className="absolute top-full left-0 right-0 z-20 mt-2 bg-white rounded-2xl shadow-2xl border border-amber-50 py-3 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                                 {USER_LOCATIONS.map((loc) => (
-                                                    <button key={loc.name} onClick={() => { onNeighborhoodChange(loc.name); setIsLocOpen(false); }} className={`w-full text-left px-6 py-4 text-sm font-bold uppercase tracking-widest hover:bg-amber-50 transition-colors ${currentLocationName === loc.name ? 'text-[#047857] bg-emerald-50' : 'text-slate-500'}`}>
-                                                        {loc.name}
-                                                    </button>
+                                                    <button key={loc.name} onClick={() => { onNeighborhoodChange(loc.name); setIsLocOpen(false); }} className={`w-full text-left px-6 py-4 text-sm font-bold uppercase tracking-widest hover:bg-amber-50 transition-colors ${currentLocationName === loc.name ? 'text-[#047857] bg-emerald-50' : 'text-slate-500'}`}>{loc.name}</button>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
-
                                     <form onSubmit={handleSearchSubmit} className="space-y-4">
                                         <div className="relative">
                                             <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"><Icon name="search" size={20} /></div>
@@ -120,9 +274,7 @@
                                         </div>
                                         <div className="flex flex-wrap gap-2 px-1">
                                             {categories.map(cat => (
-                                                <button key={cat} type="button" onClick={() => handleChipClick(cat)} className="px-5 py-2.5 bg-white border border-amber-100 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-[#047857] hover:text-[#047857] hover:bg-emerald-50 transition-all shadow-sm">
-                                                    {cat}
-                                                </button>
+                                                <button key={cat} type="button" onClick={() => handleChipClick(cat)} className="px-5 py-2.5 bg-white border border-amber-100 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-[#047857] hover:text-[#047857] hover:bg-emerald-50 transition-all shadow-sm">{cat}</button>
                                             ))}
                                         </div>
                                         <button type="submit" className="w-full py-6 mt-4 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-[#065f46] transition-all transform hover:-translate-y-1 shadow-2xl shadow-emerald-950/20 active:scale-[0.98]">
@@ -137,107 +289,76 @@
             );
         };
 
-        // --- GENERIC RESULTS VIEW (Placeholder until you copy that code too) ---
-        const ResultsView = ({ plates, searchQuery, onOrderPlate, onBack }) => {
-            const Icon = ({ name, size=16 }) => <i data-lucide={name} style={{ width: size, height: size }}></i>;
-            return (
-            <div className="pb-24 pt-24 px-4 max-w-5xl mx-auto">
-                 <button onClick={onBack} className="mb-4 text-stone-400 flex items-center gap-2 text-sm font-bold uppercase tracking-widest"><Icon name="arrow-left"/> Back</button>
-                 <h2 className="text-3xl font-serif font-bold text-[#064e3b] mb-6 px-2">
-                    {searchQuery ? `Results for "${searchQuery}"` : "Today's Menu"}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {plates.map(plate => (
-                        <div key={plate.id} onClick={() => onOrderPlate(plate)} className="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-all cursor-pointer">
-                            <div className="h-48 w-full rounded-xl bg-stone-100 overflow-hidden mb-3 relative">
-                                <img src={plate.imageUrl} className="w-full h-full object-cover" alt={plate.name} />
-                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-[#047857]">${plate.price}</div>
-                            </div>
-                            <div className="px-1">
-                                <div className="flex justify-between items-start mb-1">
-                                    <h3 className="font-bold text-lg text-stone-800 font-serif">{plate.name}</h3>
-                                    <div className="flex items-center gap-1 text-amber-500 text-xs font-bold"><Icon name="star" size={12}/> {plate.rating}</div>
-                                </div>
-                                <p className="text-stone-500 text-sm mb-3 line-clamp-2">{plate.description}</p>
-                                <div className="flex items-center gap-2 text-xs font-bold text-stone-400 uppercase tracking-wider">
-                                    <span className="flex items-center gap-1"><Icon name="chef-hat" size={12}/> {plate.cook}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )};
-
-        const CheckoutView = ({ plate, onBack }) => {
-            const Icon = ({ name, size=24 }) => <i data-lucide={name} style={{ width: size, height: size }}></i>;
-            return (
-            <div className="fixed inset-0 bg-[#FFFBEB] z-50 flex flex-col overflow-y-auto">
-                <div className="relative h-64 bg-stone-900 shrink-0">
-                    <img src={plate.imageUrl} className="w-full h-full object-cover opacity-80" />
-                    <button onClick={onBack} className="absolute top-6 left-6 bg-white/20 backdrop-blur p-2 rounded-full text-white">
-                        <Icon name="chevron-down" className="rotate-90"/>
-                    </button>
-                </div>
-                <div className="flex-1 p-8 bg-white rounded-t-3xl -mt-6 relative">
-                    <div className="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-8"></div>
-                    <h1 className="text-3xl font-serif font-bold text-[#064e3b] mb-2">{plate.name}</h1>
-                    <p className="text-lg text-stone-500 font-medium mb-6">${plate.price}</p>
-                    <p className="text-stone-600 leading-relaxed mb-8">{plate.description}</p>
-                    <button onClick={() => alert('Order confirmed!')} className="w-full bg-[#047857] text-white py-4 rounded-xl font-bold text-lg tracking-widest uppercase shadow-xl shadow-emerald-900/20 active:scale-95 transition-transform">Confirm Order</button>
-                </div>
-            </div>
-        )};
-
-        // --- MAIN APP LOGIC ---
+        // --- MAIN APP ---
         const App = () => {
             const [view, setView] = useState('landing');
             const [searchQuery, setSearchQuery] = useState('');
+            const [categoryFilter, setCategoryFilter] = useState(null);
             const [userLocation, setUserLocation] = useState(USER_LOCATIONS[0]);
             const [selectedPlate, setSelectedPlate] = useState(null);
 
-            // Re-render icons when view changes
-            useEffect(() => { lucide.createIcons(); });
-
+            // Filter Logic
             const filteredPlates = useMemo(() => {
                 let plates = MOCK_PLATES.filter(p => p.neighborhood === userLocation.name);
-                if (searchQuery) {
-                    const q = searchQuery.toLowerCase();
-                    plates = plates.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+                if (categoryFilter) {
+                    const lowerCat = categoryFilter.toLowerCase();
+                    plates = plates.filter(plate => plate.name.toLowerCase().includes(lowerCat) || plate.description.toLowerCase().includes(lowerCat) || plate.category.toLowerCase().includes(lowerCat));
+                }
+                if (searchQuery.trim()) {
+                    const lowerQuery = searchQuery.toLowerCase();
+                    plates = plates.filter(plate => plate.name.toLowerCase().includes(lowerQuery) || plate.cook.toLowerCase().includes(lowerQuery) || plate.description.toLowerCase().includes(lowerQuery));
                 }
                 return plates;
-            }, [searchQuery, userLocation]);
+            }, [searchQuery, userLocation, categoryFilter]);
 
-            const handleSearch = (q, cat) => { 
-                setSearchQuery(cat || q); 
-                setView('results'); 
+            const handleSearch = (q, cat) => {
+                setSearchQuery(q);
+                setCategoryFilter(cat);
+                setView('results');
             };
 
+            const handleOrderPlate = (plate) => { setSelectedPlate(plate); setView('checkout'); };
+
+            // Render Views
+            if (view === 'checkout' && selectedPlate) {
+                return (
+                    <div className="fixed inset-0 bg-[#FFFBEB] z-50 flex flex-col overflow-y-auto">
+                        <div className="relative h-64 bg-stone-900 shrink-0">
+                            <img src={selectedPlate.imageUrl} className="w-full h-full object-cover opacity-80" />
+                            <button onClick={() => setView('results')} className="absolute top-6 left-6 bg-white/20 backdrop-blur p-2 rounded-full text-white"><Icon name="chevron-down" className="rotate-90"/></button>
+                        </div>
+                        <div className="flex-1 p-8 bg-white rounded-t-3xl -mt-6 relative">
+                            <h1 className="text-3xl font-serif font-bold text-[#064e3b] mb-2">{selectedPlate.name}</h1>
+                            <p className="text-lg text-stone-500 font-medium mb-6">${selectedPlate.price}</p>
+                            <p className="text-stone-600 leading-relaxed mb-8">{selectedPlate.description}</p>
+                            <button onClick={() => {alert('Order confirmed!'); setView('landing');}} className="w-full bg-[#047857] text-white py-4 rounded-xl font-bold text-lg tracking-widest uppercase shadow-xl shadow-emerald-900/20 active:scale-95 transition-transform">Confirm Order</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'results') {
+                return (
+                    <ResultsView 
+                        plates={filteredPlates}
+                        searchQuery={searchQuery}
+                        categoryFilter={categoryFilter}
+                        userLocation={userLocation}
+                        onOrderPlate={handleOrderPlate}
+                        onCategoryChange={(cat) => setCategoryFilter(cat)}
+                        onSearchChange={(q) => setSearchQuery(q)}
+                        onBack={() => setView('landing')}
+                    />
+                );
+            }
+
             return (
-                <div className="min-h-screen">
-                    {view === 'landing' && (
-                        <LandingView 
-                            onSearch={handleSearch} 
-                            currentLocationName={userLocation.name} 
-                            onNeighborhoodChange={(n) => {
-                                const l = USER_LOCATIONS.find(x=>x.name===n); 
-                                if(l) setUserLocation(l);
-                            }}
-                            onStartCooking={() => alert("Seller mode would open here")}
-                        />
-                    )}
-                    {view === 'results' && (
-                        <ResultsView 
-                            plates={filteredPlates} 
-                            searchQuery={searchQuery} 
-                            onOrderPlate={(p) => {setSelectedPlate(p); setView('checkout');}} 
-                            onBack={() => setView('landing')}
-                        />
-                    )}
-                    {view === 'checkout' && selectedPlate && (
-                        <CheckoutView plate={selectedPlate} onBack={() => setView('results')} />
-                    )}
-                </div>
+                <LandingView 
+                    onSearch={handleSearch} 
+                    currentLocationName={userLocation.name} 
+                    onNeighborhoodChange={(n) => {const l = USER_LOCATIONS.find(x=>x.name===n); if(l) setUserLocation(l);}}
+                    onStartCooking={() => alert("Seller Flow would start here.")}
+                />
             );
         };
 

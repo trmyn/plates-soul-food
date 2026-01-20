@@ -21,7 +21,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .pulse-live { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
     </style>
 </head>
 <body>
@@ -31,12 +31,9 @@
         const { useState, useMemo, useEffect } = React;
 
         // --- SAFE ICON COMPONENT ---
-        // This prevents the app from crashing if an icon is missing
-        const Icon = ({ name, size=20, className }) => {
-            useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [name]);
-            return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-block' }}></i>;
+        const Icon = ({ name, size=20, className, fill }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size, fill: fill, display: 'inline-block', verticalAlign: 'middle' }}></i>;
         };
 
         // --- DATA ---
@@ -54,223 +51,71 @@
             { id: 'mt-1', name: 'Short Rib Pasta', cook: "Midtown Gourmet", price: 28.00, rating: 4.9, distanceNum: 1.1, prepTime: '20m', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80', isVerified: true, isLive: true, neighborhood: 'Midtown', category: 'Main', description: 'Slow-braised beef short ribs over handmade pasta.' }
         ];
 
-        // --- SELLER FLOW COMPONENTS ---
-        
-        const SellerDashboard = ({ kitchenName, onPostNewPlate, onBackToBuying, neighborhood }) => {
-            return (
-                <div className="min-h-screen bg-[#FFFBEB] pb-32">
-                    <header className="bg-[#047857] text-white px-6 pt-12 pb-12 rounded-b-[3rem] shadow-xl">
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                <h1 className="text-3xl font-serif font-black">{kitchenName || "My Kitchen"}</h1>
-                                <p className="text-emerald-100 text-sm mt-1">{neighborhood} Hub • Pro Member</p>
-                            </div>
-                            <button onClick={onBackToBuying} className="p-3 bg-white/10 rounded-xl"><Icon name="log-out" /></button>
-                        </div>
-                        <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-md">
-                            <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest">Total Earnings</p>
-                            <p className="text-4xl font-black mt-2">$1,250.00</p>
-                        </div>
-                    </header>
-                    <main className="px-6 -mt-8 space-y-6">
-                        <button onClick={onPostNewPlate} className="w-full py-8 bg-white border-2 border-dashed border-[#047857]/30 rounded-[2rem] flex flex-col items-center justify-center gap-3 shadow-lg">
-                            <div className="w-12 h-12 bg-[#047857] text-white rounded-full flex items-center justify-center"><Icon name="plus" /></div>
-                            <span className="font-bold text-[#047857]">Post New Plate</span>
-                        </button>
-                        <div>
-                            <h3 className="font-serif font-bold text-xl mb-4 text-slate-900">Active Plates</h3>
-                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-amber-50 flex gap-4">
-                                <div className="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden"><img src="https://images.unsplash.com/photo-1606471191009-63994c53433b?auto=format&fit=crop&w=200&q=80" className="w-full h-full object-cover" /></div>
-                                <div><p className="font-bold text-slate-900">The Sunday Plate</p><p className="text-sm text-[#047857] font-bold">$32.00 • Live</p></div>
-                            </div>
-                        </div>
-                    </main>
-                </div>
-            );
-        };
-
-        const SellerPitch = ({ onNext, onBack }) => (
-            <div className="min-h-screen bg-[#FFFBEB] flex flex-col p-6">
-                <button onClick={onBack} className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-8"><Icon name="arrow-left" /></button>
-                <div className="flex-1 flex flex-col items-center justify-center text-center">
-                    <div className="w-20 h-20 bg-[#047857] text-white rounded-3xl flex items-center justify-center mb-6 shadow-xl"><Icon name="chef-hat" size={40} /></div>
-                    <h1 className="text-4xl font-serif font-black text-slate-900 mb-4">Start Your Kitchen.</h1>
-                    <p className="text-slate-500 text-lg mb-8">Cook for your neighbors in Atlanta. Earn cash on your own schedule.</p>
-                    <button onClick={onNext} className="w-full py-6 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Get Started</button>
-                </div>
-            </div>
-        );
-
-        const SellerProfile = ({ onNext, onBack }) => {
-            const [name, setName] = useState('');
-            return (
-                <div className="min-h-screen bg-[#FFFBEB] flex flex-col p-6">
-                    <button onClick={onBack} className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-8"><Icon name="arrow-left" /></button>
-                    <h1 className="text-3xl font-serif font-black text-slate-900 mb-8">Name Your Kitchen.</h1>
-                    <input type="text" placeholder="e.g. Auntie's Soul Food" value={name} onChange={e => setName(e.target.value)} className="w-full p-6 text-xl rounded-2xl border-none shadow-lg mb-4" />
-                    <button onClick={() => onNext({ kitchenName: name })} className="w-full py-6 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Create Profile</button>
-                </div>
-            );
-        };
-
-        const SellerDish = ({ onNext, onBack }) => {
-            const [dish, setDish] = useState('');
-            const [price, setPrice] = useState('');
-            return (
-                <div className="min-h-screen bg-white flex flex-col p-6">
-                    <button onClick={onBack} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mb-8"><Icon name="arrow-left" /></button>
-                    <h1 className="text-3xl font-serif font-black text-slate-900 mb-8">Post a Plate.</h1>
-                    <div className="w-full h-48 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 mb-6 flex items-center justify-center text-slate-400"><Icon name="camera" /></div>
-                    <input type="text" placeholder="Dish Name" value={dish} onChange={e => setDish(e.target.value)} className="w-full p-4 bg-slate-50 rounded-xl mb-4" />
-                    <input type="number" placeholder="Price ($)" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-slate-50 rounded-xl mb-6" />
-                    <button onClick={onNext} className="w-full py-6 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Post It Live</button>
-                </div>
-            );
-        };
-
-        const SellerSuccess = ({ onFinish }) => (
-            <div className="min-h-screen bg-[#FFFBEB] flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-24 h-24 bg-emerald-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl"><Icon name="check" size={40} /></div>
-                <h1 className="text-4xl font-serif font-black text-slate-900 mb-4">You're Live!</h1>
-                <p className="text-slate-500 mb-8">Your neighbors can now order your food.</p>
-                <button onClick={onFinish} className="w-full py-6 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Go to Dashboard</button>
-            </div>
-        );
-
-        // --- BUYER FLOW COMPONENTS ---
-        
-        const CheckoutView = ({ plate, onBack, onConfirm }) => (
-            <div className="min-h-screen bg-white pb-32">
-                <header className="px-6 py-6 border-b border-amber-50 flex items-center gap-4 sticky top-0 bg-white z-10">
-                    <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full"><Icon name="chevron-left" /></button>
-                    <h2 className="text-xl font-serif font-bold text-slate-900">Checkout</h2>
-                </header>
-                <main className="px-6 py-8 max-w-xl mx-auto space-y-8">
-                    <section className="flex gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                        <img src={plate.imageUrl} className="w-24 h-24 rounded-xl object-cover" />
-                        <div className="flex-1 justify-center flex flex-col">
-                            <h3 className="text-lg font-serif text-slate-900 leading-tight">{plate.name}</h3>
-                            <p className="text-sm font-bold text-[#047857] mt-1">{plate.cook}</p>
-                            <p className="text-lg font-black text-slate-900 mt-2">${plate.price.toFixed(2)}</p>
-                        </div>
-                    </section>
-                    <section className="space-y-4">
-                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Pickup Location</h4>
-                        <div className="flex items-center gap-4 p-4 border-2 border-slate-100 rounded-2xl">
-                            <Icon name="map-pin" className="text-[#047857]" />
-                            <div><p className="font-bold">{plate.neighborhood} Hub</p><p className="text-xs text-slate-500">Address sent after booking</p></div>
-                        </div>
-                    </section>
-                    <button onClick={onConfirm} className="w-full py-6 bg-[#047857] text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl">Confirm Order <Icon name="shopping-bag" size={18} /></button>
-                </main>
-            </div>
-        );
-
-        const ResultsView = ({ plates, searchQuery, categoryFilter, userLocation, onOrderPlate, onCategoryChange, onSearchChange, onBack }) => {
-            const categories = ["Ribs", "Oxtails", "Yams", "Greens"];
-            return (
-                <div className="flex flex-col md:flex-row h-screen pt-20 bg-[#FFFBEB] overflow-hidden">
-                    <div className="hidden md:flex w-[40%] h-full bg-stone-200 items-center justify-center text-stone-400 gap-2"><Icon name="map" size={40} /><span className="text-xs font-bold uppercase">Map View</span></div>
-                    <div className="w-full md:w-[60%] h-full overflow-y-auto pb-32 px-6">
-                        <div className="sticky top-0 bg-[#FFFBEB]/95 backdrop-blur py-4 z-10 border-b border-amber-100 mb-6">
-                            <div className="flex gap-2 items-center mb-4">
-                                <button onClick={onBack}><Icon name="arrow-left" className="text-slate-400" /></button>
-                                <input type="text" placeholder="Search plates..." value={searchQuery} onChange={e => onSearchChange(e.target.value)} className="w-full p-3 rounded-xl border-none shadow-sm" />
-                            </div>
-                            <div className="flex gap-2 overflow-x-auto pb-2">{categories.map(cat => <button key={cat} onClick={() => onCategoryChange(cat === categoryFilter ? null : cat)} className={`px-4 py-2 rounded-full text-[10px] font-black uppercase ${cat === categoryFilter ? 'bg-[#047857] text-white' : 'bg-white border'}`}>{cat}</button>)}</div>
-                        </div>
-                        <div className="space-y-8">
-                            {plates.map(plate => (
-                                <div key={plate.id} className="bg-white p-4 rounded-[2rem] shadow-lg border border-amber-50">
-                                    <div className="relative h-48 rounded-[1.5rem] overflow-hidden mb-4">
-                                        <img src={plate.imageUrl} className="w-full h-full object-cover" />
-                                        <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-[#047857] flex gap-1 items-center"><Icon name="clock" size={10} /> {plate.prepTime}</div>
-                                    </div>
-                                    <div className="px-2">
-                                        <div className="flex justify-between mb-2">
-                                            <h3 className="font-serif text-xl text-slate-900">{plate.name}</h3>
-                                            <span className="font-black text-[#047857]">${plate.price}</span>
-                                        </div>
-                                        <p className="text-sm text-slate-500 mb-4">{plate.description}</p>
-                                        <button onClick={() => onOrderPlate(plate)} className="w-full py-4 bg-[#047857] text-white rounded-xl font-bold text-xs uppercase tracking-widest">Order Now</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
+        // --- LANDING VIEW (Restored Original Design) ---
         const LandingView = ({ onSearch, currentLocationName, onNeighborhoodChange, onStartCooking }) => {
-            const [query, setQuery] = useState('');
+            const [localQuery, setLocalQuery] = useState('');
             const [isLocOpen, setIsLocOpen] = useState(false);
+            const categories = ["Ribs", "Oxtails", "Yams", "Greens"];
+
             return (
-                <div className="min-h-screen flex flex-col md:flex-row bg-[#FFFBEB]">
-                    <div className="w-full md:w-1/2 h-[50vh] md:h-screen relative">
-                        <img src="https://147611588.cdn6.editmysite.com/uploads/1/4/7/6/147611588/EEVYVMTD47S5OH7KZS7RHKW4.png?width=2400&optimize=medium" className="w-full h-full object-cover brightness-75" />
-                        <div className="absolute inset-0 flex items-end p-8">
-                             <div className="text-white">
-                                <p className="font-serif font-bold text-xl mb-4">Earn money cooking what you love.</p>
-                                <button onClick={onStartCooking} className="bg-orange-600 text-white px-8 py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-orange-700 transition-all">Start Cooking</button>
-                             </div>
+                <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#FFFBEB]">
+                    {/* Left Side: Hero Image */}
+                    <div className="w-full md:w-1/2 h-[50vh] md:h-screen relative overflow-hidden">
+                        <img src="https://147611588.cdn6.editmysite.com/uploads/1/4/7/6/147611588/EEVYVMTD47S5OH7KZS7RHKW4.png?width=2400&optimize=medium" 
+                             alt="Cajun Fried Chicken" 
+                             className="w-full h-full object-cover brightness-95" />
+                        <div className="absolute inset-0 bg-black/20" />
+                        
+                        {/* Overlay Text */}
+                        <div className="absolute bottom-12 left-12 hidden md:block bg-black/40 backdrop-blur-md p-8 rounded-3xl border border-white/20 max-w-sm">
+                            <p className="text-white text-xl font-serif font-bold mb-2">Most Popular: Cajun Fried Chicken</p>
+                            <p className="text-white/80 text-sm leading-relaxed mb-6">Tossed in our sticky sauce. Served with 2 sides.</p>
+                            <div className="flex flex-col items-center">
+                                <button onClick={onStartCooking} className="w-full py-4 bg-orange-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-orange-950/20 hover:bg-orange-700 transition-all">
+                                    Earn Cash Cooking
+                                </button>
+                                <p className="mt-2 text-[10px] text-white/80 uppercase tracking-widest">For demo purposes only.</p>
+                            </div>
                         </div>
                     </div>
-                    <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
-                         <div className="max-w-md mx-auto w-full">
-                            <div className="inline-block bg-amber-100 text-[#C2410C] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-6">Atlanta Metro</div>
-                            <h1 className="text-5xl font-serif text-slate-900 mb-8 leading-tight">Real Soul Food.<br/><span className="text-[#047857]">Neighborhood Made.</span></h1>
-                            
-                            <div className="relative mb-4">
-                                <button onClick={() => setIsLocOpen(!isLocOpen)} className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-amber-100">
-                                    <span className="font-bold text-[#047857] flex items-center gap-2"><Icon name="map-pin" size={16} /> {currentLocationName}</span>
-                                    <Icon name="chevron-down" size={16} />
-                                </button>
-                                {isLocOpen && <div className="absolute top-full w-full bg-white mt-2 rounded-2xl shadow-xl z-20 border overflow-hidden">{USER_LOCATIONS.map(loc => <button key={loc.name} onClick={() => {onNeighborhoodChange(loc.name); setIsLocOpen(false);}} className="w-full text-left p-4 hover:bg-slate-50 text-sm font-bold text-slate-600">{loc.name}</button>)}</div>}
+
+                    {/* Right Side: Action Section */}
+                    <div className="w-full md:w-1/2 flex flex-col px-8 md:px-20 py-12 md:py-0 justify-center">
+                        <div className="max-w-xl mx-auto w-full">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-100 text-[#C2410C] text-[10px] font-black uppercase tracking-[0.2em] mb-8 rounded-full border border-amber-200">
+                                <Icon name="map-pin" size={12} /> Atlanta Metro
                             </div>
+                            
+                            <h1 className="text-5xl md:text-7xl font-serif leading-[1.1] mb-10 text-slate-900 tracking-tight">
+                                Real Soul Food.<br />
+                                <span className="text-[#047857]">Not on Facebook.</span><br />
+                                Right in your neighborhood.
+                            </h1>
+                            
+                            <div className="space-y-6">
+                                {/* Neighborhood Dropdown */}
+                                <div className="relative">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Pick-up neighborhood (under 10 min drive)</label>
+                                    <button onClick={() => setIsLocOpen(!isLocOpen)} className="w-full flex items-center justify-between px-6 py-5 bg-white border-2 border-amber-50 rounded-2xl shadow-sm hover:border-[#047857]/30 transition-all text-left">
+                                        <div className="flex items-center gap-4 text-[#047857]">
+                                            <Icon name="map-pin" size={20} />
+                                            <span className="text-lg font-bold uppercase tracking-widest">{currentLocationName}</span>
+                                        </div>
+                                        <Icon name="chevron-down" size={20} className={isLocOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                                    </button>
+                                    
+                                    {isLocOpen && (
+                                        <div className="absolute top-full left-0 right-0 z-20 mt-2 bg-white rounded-2xl shadow-2xl border border-amber-50 py-3 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                            {USER_LOCATIONS.map((loc) => (
+                                                <button key={loc.name} onClick={() => { onNeighborhoodChange(loc.name); setIsLocOpen(false); }} className={`w-full text-left px-6 py-4 text-sm font-bold uppercase tracking-widest hover:bg-amber-50 transition-colors ${currentLocationName === loc.name ? 'text-[#047857] bg-emerald-50' : 'text-slate-500'}`}>
+                                                    {loc.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
-                            <form onSubmit={(e) => {e.preventDefault(); onSearch(query);}} className="relative">
-                                <input type="text" placeholder="What are you craving?" value={query} onChange={e => setQuery(e.target.value)} className="w-full p-5 pl-12 rounded-2xl shadow-sm border-none" />
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><Icon name="search" /></div>
-                                <button type="submit" className="w-full mt-4 bg-[#047857] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Find Food</button>
-                            </form>
-                         </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- MAIN APP ---
-        const App = () => {
-            const [view, setView] = useState('landing'); // landing, results, checkout, seller-pitch, seller-profile, seller-dish, seller-dashboard
-            const [searchQuery, setSearchQuery] = useState('');
-            const [categoryFilter, setCategoryFilter] = useState(null);
-            const [userLocation, setUserLocation] = useState(USER_LOCATIONS[0]);
-            const [selectedPlate, setSelectedPlate] = useState(null);
-            const [sellerData, setSellerData] = useState({});
-
-            const filteredPlates = useMemo(() => {
-                let plates = MOCK_PLATES.filter(p => p.neighborhood === userLocation.name);
-                if (categoryFilter) plates = plates.filter(p => p.category.toLowerCase().includes(categoryFilter.toLowerCase()));
-                if (searchQuery) plates = plates.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-                return plates;
-            }, [searchQuery, userLocation, categoryFilter]);
-
-            // Router
-            if (view === 'seller-pitch') return <SellerPitch onNext={() => setView('seller-profile')} onBack={() => setView('landing')} />;
-            if (view === 'seller-profile') return <SellerProfile onNext={(data) => { setSellerData({...sellerData, ...data}); setView('seller-dashboard'); }} onBack={() => setView('seller-pitch')} />;
-            if (view === 'seller-dashboard') return <SellerDashboard kitchenName={sellerData.kitchenName} onPostNewPlate={() => setView('seller-dish')} onBackToBuying={() => setView('landing')} neighborhood={userLocation.name} />;
-            if (view === 'seller-dish') return <SellerDish onNext={() => setView('seller-success')} onBack={() => setView('seller-dashboard')} />;
-            if (view === 'seller-success') return <SellerSuccess onFinish={() => setView('seller-dashboard')} />;
-
-            if (view === 'checkout' && selectedPlate) return <CheckoutView plate={selectedPlate} onBack={() => setView('results')} onConfirm={() => { alert('Demo Order Confirmed!'); setView('landing'); }} />;
-            if (view === 'results') return <ResultsView plates={filteredPlates} searchQuery={searchQuery} categoryFilter={categoryFilter} userLocation={userLocation} onOrderPlate={(p) => { setSelectedPlate(p); setView('checkout'); }} onCategoryChange={setCategoryFilter} onSearchChange={setSearchQuery} onBack={() => setView('landing')} />;
-            
-            return <LandingView onSearch={(q, cat) => { setSearchQuery(q); setCategoryFilter(cat); setView('results'); }} currentLocationName={userLocation.name} onNeighborhoodChange={(n) => {const l = USER_LOCATIONS.find(x=>x.name===n); if(l) setUserLocation(l);}} onStartCooking={() => setView('seller-pitch')} />;
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                {/* Search Form */}
+                                <form onSubmit={(e) => { e.preventDefault(); onSearch(localQuery, null); }} className="space-y-4">
+                                    <div className="relative">
+                                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"><Icon name="search"
